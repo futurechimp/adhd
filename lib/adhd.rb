@@ -12,7 +12,7 @@ require File.dirname(__FILE__) + '/adhd/models'
 # ruby adhd.rb <node_name> <couchdb_server_url>
 #
 # (second or later node)
-# ruby adhd.rb <node_name> <couchdb_server_url> <management_node_url> <management_node_db>
+# ruby adhd.rb <node_name> <couchdb_server_url> <management_node_url> <management_node_db> -p <port_number>
 #
 # <node_name> is just a string, e.g. "foo".
 # <couchdb_server_url>: the url (including port) for this node's couchdb server
@@ -20,7 +20,8 @@ require File.dirname(__FILE__) + '/adhd/models'
 # <management_node_url>: the url of the management node where this node should
 #   initially replicate from, e.g. http://192.168.1.104:5984
 # <management_node_db>: the couchdb management node database, e.g. "bar_node_db"
-
+# <port_number>: a port number to run on. If you're running more than one node locally
+#   for development purposes you'll need to pick a non-default port higher than 1024.
 
 
 node_name = ARGV[0]
