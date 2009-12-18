@@ -48,14 +48,19 @@ node.url = node_url
 node.save
 
 # We check if we are the first node. If we are the first node, we set ourself up
-# as the management node. If not, we find out where the management node is and
+# as the management node. 
+all_nodes = Node.by_name()
+if all_nodes.length == 1
+  # puts "Setup #{node.name} as management node"
+  node.is_management = 3
+  node.save
+end
+
+# If not, we find out where the management node is and
 # we replicate to the administrative node.
-if management_node = Node.by_is_management.last
+if !node.is_management && management_node = Node.by_is_management.last
   management_node_server = CouchRest.new(management_node.url)
   management_node_db = CouchRest::Database.new(management_node_server, management_node.name + "_node_db")
   node_db.replicate_to(management_node_db)
-else
-  node.is_management = 3
-  node.save
 end
 
