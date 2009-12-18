@@ -39,9 +39,16 @@ if buddy_server_url && buddy_db
   node_db.replicate_from(buddy_db)
 end
 
-node = Node.by_name(:key => node_name).first
+# Retrieve our own node by our name
+# If there are other nodes with the name kill their records!
+node_candidates = Node.by_name(:key => node_name)
+node = node_candidates.pop
 node = Node.new if node.nil?
+node_candidates.each do |other_me|
+  other_me.destroy # destroy other records
+end
 
+# Update our very own record
 node.name = node_name
 node.url = node_url
 node.save
@@ -55,18 +62,12 @@ if all_nodes.length == 1
   node.save
 end
 
-# If not, we find out where the management node is and
-# we replicate to the administrative node.
-if !node.is_management
-  management_node = Node.by_is_management.last
-  node_db.replicate_to(management_node.get_node_db)
-else
-  # Take all the management nodes with the same priority as us
-  all_management_nodes = Node.by_is_management(node.is_management)
-  all_management_nodes.each do |mng_node|
-     node_db.replicate_to(mng_node.get_node_db)
-  end
-end
+# Lets build a nice NodeDB
+ndb = NodeDB.new
+ndb.local_node_db = node_db
+ndb.our_node = node
+
+ndb.sync # SYNC
 
 get "/" do
   @all_nodes = Node.by_name
