@@ -40,8 +40,13 @@ if buddy_server_url && buddy_db
   node_db.replicate_from(buddy_db)
 end
 
-node = Node.by_name(:key => node_name).first
+node_candidates = Node.by_name(:key => node_name)
+node = node_candidates.pop
 node = Node.new if node.nil?
+node_candidates.each do |other_me|
+  other_me.destroy
+end
+
 
 node.name = node_name
 node.url = node_url
@@ -59,13 +64,21 @@ end
 # If not, we find out where the management node is and
 # we replicate to the administrative node.
 if !node.is_management
-  management_node = Node.by_is_management.last  
-  node_db.replicate_to(management_node.get_node_db)
+  management_node = Node.by_is_management.last
+  remote_db = management_node.get_node_db
+  node_db.replicate_from(remote_db)
+  # TODO: Manage conflicts here
+  node_db.replicate_to(remote_db) 
 else
   # Take all the management nodes with the same priority as us
   all_management_nodes = Node.by_is_management(node.is_management)
+ 
+  # TODO: Manage conflicts here
   all_management_nodes.each do |mng_node|
-     node_db.replicate_to(mng_node.get_node_db)
+     if ! (mng_node.name == node.name)
+       node_db.replicate_from(mng_node.get_node_db)
+       node_db.replicate_to(mng_node.get_node_db)
+     end 
   end
 end
 

@@ -1,3 +1,7 @@
+class NodeDB
+  attr_accessor :local_node_db, :our_name
+end
+
 class Node  < CouchRest::ExtendedDocument
   NODESERVER = CouchRest.new("#{ARGV[1]}")
   NODESERVER.default_database = "#{ARGV[0]}_node_db"
