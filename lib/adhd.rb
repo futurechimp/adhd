@@ -36,7 +36,7 @@ node_db = CouchRest::Database.new(NODESERVER, "#{node_name}_node_db")
 # sync the db with our buddy
 if buddy_server_url && buddy_db
   buddy_server = CouchRest.new("#{buddy_server_url}")
-  buddy_db = CouchRest::Database.new(buddy_server, buddy_db)
+  buddy_db = CouchRest::Database.new(buddy_server, buddy_db + "_node_db")
   node_db.replicate_from(buddy_db)
 end
 
@@ -58,9 +58,19 @@ end
 
 # If not, we find out where the management node is and
 # we replicate to the administrative node.
-if !node.is_management && management_node = Node.by_is_management.last
-  management_node_server = CouchRest.new(management_node.url)
-  management_node_db = CouchRest::Database.new(management_node_server, management_node.name + "_node_db")
-  node_db.replicate_to(management_node_db)
+if !node.is_management
+  management_node = Node.by_is_management.last  
+  node_db.replicate_to(management_node.get_node_db)
+else
+  # Take all the management nodes with the same priority as us
+  all_management_nodes = Node.by_is_management(node.is_management)
+  all_management_nodes.each do |mng_node|
+     node_db.replicate_to(mng_node.get_node_db)
+  end
 end
+
+get "/" do
+  "foo"
+end
+
 
