@@ -4,6 +4,8 @@ class NodeDB
   def sync
     # We replicate our state to the management node(s)
     management_nodes = Node.by_is_management.reverse
+    # NOTE: randomize the order for load balancing here
+    
     management_nodes.each do |mng_node|
       remote_db = mng_node.get_node_db
       if !(mng_node.name == our_node.name)
