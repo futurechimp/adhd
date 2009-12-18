@@ -70,7 +70,12 @@ else
 end
 
 get "/" do
-  "foo"
+  all_nodes = Node.by_name()
+  s = '<html><body>'
+  all_nodes.each do |n|
+    s += "#{n.name} | #{n.url} | #{n.is_management}<br/>"
+  end
+  s += '</body></html>'
 end
 
 
