@@ -56,7 +56,7 @@ Released   : 20090918
 					<h2>Nodes</h2>
 					<ul>
                         <% @all_nodes.each do |n| %>
-                          <li><span><%= n.name %></span>  <%= n.url %> | <%= n.status %><br/>
+                          <li><span><%= n.name %></span>  <%= n.url %> | <%= n.status %> (<%= n.is_management %>)<br/>
                         <% end %>
 
 					</ul>

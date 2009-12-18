@@ -68,6 +68,19 @@ ndb = NodeDB.new
 ndb.local_node_db = node_db
 ndb.our_node = node
 
+# Lets build a nice ShardDB
+srdb = ShardRangeDB.new
+srdb.nodes = ndb
+srdb.our_node = node
+srdb.local_shard_db = node.get_shard_db
+
+# If there are no shards make a few, if we are managers
+puts "Create new ranges?"
+if ShardRange.by_range_start.length == 0 && node.is_management
+  puts "Creating new ranges"
+  srdb.build_shards(100)
+end
+
 ndb.sync # SYNC
 
 get "/" do

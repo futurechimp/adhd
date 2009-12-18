@@ -1,3 +1,5 @@
+# Key Restrictions ok internal_IDs: must only contain [a-z0-9-]
+
 class NodeDB
   attr_accessor :local_node_db, :our_node
 
@@ -5,6 +7,11 @@ class NodeDB
     # We replicate our state to the management node(s)
     management_nodes = Node.by_is_management.reverse
     # NOTE: randomize the order for load balancing here
+    # NOTE2: How to build skynet:
+    #        if length of management is zero, then chose 3 different random
+    #        nodes at each sync, and sync with them in node_name order.
+    #        This guarantees that any updates on nodes are communicated in
+    #        O(log N) ephocs, at the cost of O(3 * N) connections per epoch. 
     
     management_nodes.each do |mng_node|
       remote_db = mng_node.get_node_db
@@ -48,6 +55,105 @@ class Node  < CouchRest::ExtendedDocument
     server = CouchRest.new("#{url}")
     server.database!("#{name}_node_db")
   end
+
+  def get_shard_db
+    server = CouchRest.new("#{url}")
+    server.database!("#{name}_shard_db")
+  end
+  
+
+end
+
+class ShardRangeDB
+
+  attr_accessor :nodes, :local_shard_db, :our_node  
+
+  def sync
+    # We replicate our state from the management node(s)
+    # We never push content if we are only storage
+    management_nodes = Node.by_is_management.reverse
+    # NOTE: randomize the order for load balancing here
+    
+    management_nodes.each do |mng_node|
+      remote_db = mng_node.get_shard_db
+      if !(mng_node.name == our_node.name)
+        begin 
+          local_shard_db.replicate_from(remote_db)
+          # TODO: Manage conflicts here          
+          if our_node.is_management # Only need to contact one node
+            local_shard_db.replicate_to(remote_db)
+          else
+            break # sync with only one management server
+        rescue
+          puts "Could not connect to DB node #{mng_node.name}"
+          # TODO: change status or chose another management server
+          mng_node.status = "UNAVAILABLE"
+          mng_node.save
+        end     
+      end
+    end
+  end 
+
+
+
+  def build_shards(number)
+
+    # Make a large list of possible id boundaries
+    characters = []
+    ("0".."9").each do |c|
+      characters << c
+    end
+    ("a".."z").each do |c|
+      characters << c
+    end
+
+    
+    # Generate 36 x 36 keys to choose boundaries from
+    all_keys = []
+    characters.each do |c1|
+      characters.each do |c2|
+        all_keys << (c1+c2)
+      end
+    end
+    
+    # Now chose our boundaries
+    num_range_keys = all_keys.length
+    approx_shard_size = (num_range_keys * 1.0) / number
+    
+    shard_starts = []
+    (0...number).each do |n|
+      shard_starts << (all_keys[(n * approx_shard_size).floor])
+    end
+    
+    shard_ends = shard_starts.clone
+    shard_ends << ("z" * 100)
+    shard_ends.delete_at(0)
+    
+    # Finally build them!
+    puts "Build Shards"
+    (0...number).each do |n|
+      puts "Shard #{n}: from #{shard_starts[n]} to #{shard_ends[n]}"
+      shard_name = "sh_#{shard_starts[n]}_to_#{shard_ends[n]}"
+      sr = ShardRange.new
+      sr.range_start = shard_starts[n]
+      sr.range_end = shard_ends[n]
+      sr.shard_db_name = shard_name
+      sr.save
+    end    
+  end
+
+  def get_shard(internal_id)
+    # Finds the list of shards within which this ID lives
+    all_shards = ShardRange.by_range_start 
+    selected_shards = []
+    all_shards.each do |a_shard| # TODO: linear search is inefficient -- create a view 
+      if a_shard.range_start <= internal_id && a_shard.range_end > internal_id
+        selected_shards << a_shard
+      end
+    end
+    selected_shards
+  end
+
 end
 
 class ShardRange < CouchRest::ExtendedDocument
@@ -61,6 +167,8 @@ class ShardRange < CouchRest::ExtendedDocument
   property :node_list
   property :master_node
   property :shard_db_name
+
+  view_by :range_start
   
 end
 
