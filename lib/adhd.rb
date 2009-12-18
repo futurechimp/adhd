@@ -23,10 +23,10 @@ require File.dirname(__FILE__) + '/adhd/models'
 # <port_number>: a port number to run on. If you're running more than one node locally
 #   for development purposes you'll need to pick a non-default port higher than 1024.
 
-node_name = ARGV[0]
-node_url = ARGV[1]
-buddy_server_url = ARGV[2]
-buddy_db =  ARGV[3]
+node_name = ARGV[1]
+node_url = ARGV[2]
+buddy_server_url = ARGV[3]
+buddy_db =  ARGV[4]
 
 NODESERVER = CouchRest.new("#{node_url}")
 NODESERVER.default_database = "#{node_name}_node_db"
