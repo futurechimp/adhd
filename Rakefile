@@ -5,12 +5,16 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "adhd"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
-    gem.email = "dave@netbook"
+    gem.summary = %Q{An experiment in distributed file replication using CouchDB }
+    gem.description = %Q{More to say when something works! Do not bother installing this! }
+    gem.email = "dave.hrycyszyn@headlondon.com"
     gem.homepage = "http://github.com/futurechimp/adhd"
-    gem.authors = ["dave@netbook"]
+    gem.authors = ["dave.hrycyszyn@headlondon.com"]
     gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
+    gem.add_development_dependency "ruby-debug", ">= 0.10.3"
+    gem.add_dependency "sinatra", ">= 0.9.4"
+    gem.add_dependency "couchrest", ">= 0.33"
+
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
 rescue LoadError
@@ -50,3 +54,4 @@ Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
+
