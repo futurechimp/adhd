@@ -104,8 +104,6 @@ class ShardRangeDB
     end
   end 
 
-
-
   def build_shards(number)
     # Make a large list of possible id boundaries
     characters = []
@@ -176,6 +174,26 @@ class ShardRange < CouchRest::ExtendedDocument
   property :master_node
   property :shard_db_name
 
-  view_by :range_start  
+  view_by :range_start 
+  
+  # View "node" - given a node returns the shards watched
+  # How to use this new
+  # 
+  # puts "Which Shards does 'node1' watch?"
+  # ShardRange.by_node(:key => "node1").each do |s|
+  #   puts "Shard: #{s.shard_db_name}"
+  # end
+
+   
+  view_by :node,
+          :map => 
+          "function(doc) {
+          if (doc['couchrest-type'] == 'ShardRange' && doc.node_list) {
+            doc.node_list.forEach(function(node){
+              emit(node, 1);
+            });
+          }
+        }"
+  
 end
 
