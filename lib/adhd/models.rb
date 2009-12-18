@@ -17,6 +17,8 @@ class NodeDB
         rescue
           puts "Could not connect to DB node #{mng_node.name}"
           # TODO: change status or chose another management server
+          mng_node.status = "UNAVAILABLE"
+          mng_node.save
         end     
       end
     end
@@ -46,5 +48,19 @@ class Node  < CouchRest::ExtendedDocument
     server = CouchRest.new("#{url}")
     server.database!("#{name}_node_db")
   end
+end
+
+class ShardRange < CouchRest::ExtendedDocument
+  NODESERVER = CouchRest.new("#{ARGV[1]}")
+  NODESERVER.default_database = "#{ARGV[0]}_shard_db"
+
+  use_database NODESERVER.default_database
+
+  property :range_start
+  property :range_end
+  property :node_list
+  property :master_node
+  property :shard_db_name
+  
 end
 
