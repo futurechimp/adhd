@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
      "README.rdoc",
      "Rakefile",
      "VERSION",
-     "adhd.rb",
+     "adhd.gemspec",
      "doc/adhd.xmi",
      "lib/adhd.rb",
      "lib/adhd/models.rb",
