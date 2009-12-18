@@ -15,5 +15,10 @@ class Node  < CouchRest::ExtendedDocument
 
   view_by :name
   view_by :is_management
+
+  def get_node_db
+    server = CouchRest.new("#{url}")
+    server.database!("#{name}_node_db")
+  end
 end
 
