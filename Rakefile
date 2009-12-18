@@ -14,7 +14,7 @@ begin
     gem.add_development_dependency "ruby-debug", ">= 0.10.3"
     gem.add_dependency "sinatra", ">= 0.9.4"
     gem.add_dependency "couchrest", ">= 0.33"
-
+    gem.add_dependency "thin", ">= 1.2.4"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new

@@ -23,6 +23,7 @@ require File.dirname(__FILE__) + '/adhd/models'
 # <port_number>: a port number to run on. If you're running more than one node locally
 #   for development purposes you'll need to pick a non-default port higher than 1024.
 
+debugger
 
 node_name = ARGV[0]
 node_url = ARGV[1]
@@ -48,7 +49,7 @@ node.url = node_url
 node.save
 
 # We check if we are the first node. If we are the first node, we set ourself up
-# as the management node. 
+# as the management node.
 all_nodes = Node.by_name()
 if all_nodes.length == 1
   # puts "Setup #{node.name} as management node"
