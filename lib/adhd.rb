@@ -36,7 +36,7 @@ node_db = CouchRest::Database.new(NODESERVER, "#{node_name}_node_db")
 # sync the db with our buddy
 if buddy_server_url && buddy_db
   buddy_server = CouchRest.new("#{buddy_server_url}")
-  buddy_db = CouchRest::Database.new(buddy_server, buddy_db)
+  buddy_db = CouchRest::Database.new(buddy_server, buddy_db + "_node_db")
   node_db.replicate_from(buddy_db)
 end
 
