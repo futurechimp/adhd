@@ -75,13 +75,16 @@ srdb.our_node = node
 srdb.local_shard_db = node.get_shard_db
 
 # If there are no shards make a few, if we are managers
-puts "Create new ranges?"
+#puts "Create new ranges?"
+#puts "How many shards: #{ShardRange.by_range_start.length}"
+#puts "in #{ShardRange::SHARDSERVER.default_database}"
 if ShardRange.by_range_start.length == 0 && node.is_management
   puts "Creating new ranges"
   srdb.build_shards(100)
 end
 
 ndb.sync # SYNC
+srdb.sync # SYNC
 
 get "/" do
   @all_nodes = Node.by_name
@@ -91,5 +94,7 @@ end
 get "/sync" do
   # Sync the node database
   ndb.sync
+  # Sync the shard database
+  srdb.sync
 end
 

@@ -7,13 +7,19 @@ class NodeDB
     # We replicate our state to the management node(s)
     management_nodes = Node.by_is_management.reverse
     # NOTE: randomize the order for load balancing here
-    # NOTE2: How to build skynet:
-    #        if length of management is zero, then chose 3 different random
+
+    # NOTE2: How to build skynet (TODO)
+    #        -------------------
+    #        If length of management is zero, then chose 3 different random
     #        nodes at each sync, and sync with them in node_name order.
     #        This guarantees that any updates on nodes are communicated in
-    #        O(log N) ephocs, at the cost of O(3 * N) connections per epoch. 
+    #        O(log N) ephocs, at the cost of O(3 * N) connections per epoch.
+    #        It also guarantees any new management servers are discovered in
+    #        this O(log N) time, creating "jelly fish" or "partition proof"
+    #        availability. 
     
     management_nodes.each do |mng_node|
+      puts "Sync NodeDB with #{mng_node.name}"
       remote_db = mng_node.get_node_db
       if !(mng_node.name == our_node.name)
         begin 
@@ -59,8 +65,7 @@ class Node  < CouchRest::ExtendedDocument
   def get_shard_db
     server = CouchRest.new("#{url}")
     server.database!("#{name}_shard_db")
-  end
-  
+  end  
 
 end
 
@@ -74,16 +79,21 @@ class ShardRangeDB
     management_nodes = Node.by_is_management.reverse
     # NOTE: randomize the order for load balancing here
     
-    management_nodes.each do |mng_node|
+    
+    management_nodes.each do |mng_node|      
       remote_db = mng_node.get_shard_db
       if !(mng_node.name == our_node.name)
         begin 
+          puts "Sync ShardRange DB pull from #{mng_node.name}"
           local_shard_db.replicate_from(remote_db)
           # TODO: Manage conflicts here          
-          if our_node.is_management # Only need to contact one node
+          if our_node.is_management 
+            # Push any changes to other management nodes
+            puts "Sync ShardRange DB pushto #{mng_node.name}"
             local_shard_db.replicate_to(remote_db)
           else
             break # sync with only one management server
+        end
         rescue
           puts "Could not connect to DB node #{mng_node.name}"
           # TODO: change status or chose another management server
@@ -97,7 +107,6 @@ class ShardRangeDB
 
 
   def build_shards(number)
-
     # Make a large list of possible id boundaries
     characters = []
     ("0".."9").each do |c|
@@ -106,7 +115,6 @@ class ShardRangeDB
     ("a".."z").each do |c|
       characters << c
     end
-
     
     # Generate 36 x 36 keys to choose boundaries from
     all_keys = []
@@ -157,10 +165,10 @@ class ShardRangeDB
 end
 
 class ShardRange < CouchRest::ExtendedDocument
-  NODESERVER = CouchRest.new("#{ARGV[1]}")
-  NODESERVER.default_database = "#{ARGV[0]}_shard_db"
+  SHARDSERVER = CouchRest.new("#{ARGV[1]}")
+  SHARDSERVER.default_database = "#{ARGV[0]}_shard_db"
 
-  use_database NODESERVER.default_database
+  use_database SHARDSERVER.default_database
 
   property :range_start
   property :range_end
@@ -168,7 +176,6 @@ class ShardRange < CouchRest::ExtendedDocument
   property :master_node
   property :shard_db_name
 
-  view_by :range_start
-  
+  view_by :range_start  
 end
 
