@@ -58,7 +58,7 @@ end
 # If not, we find out where the management node is and
 # we replicate to the administrative node.
 if !node.is_management
-  management_node = Node.by_is_management.last  
+  management_node = Node.by_is_management.last
   node_db.replicate_to(management_node.get_node_db)
 else
   # Take all the management nodes with the same priority as us
@@ -69,12 +69,7 @@ else
 end
 
 get "/" do
-  all_nodes = Node.by_name()
-  s = '<html><body>'
-  all_nodes.each do |n|
-    s += "#{n.name} | #{n.url} | #{n.is_management}<br/>"
-  end
-  s += '</body></html>'
+  @all_nodes = Node.by_name
+  erb :index
 end
-
 
