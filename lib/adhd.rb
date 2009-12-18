@@ -51,6 +51,7 @@ end
 # Update our very own record
 node.name = node_name
 node.url = node_url
+node.status = "RUNNING"
 node.save
 
 # We check if we are the first node. If we are the first node, we set ourself up
@@ -72,5 +73,10 @@ ndb.sync # SYNC
 get "/" do
   @all_nodes = Node.by_name
   erb :index
+end 
+
+get "/sync" do
+  # Sync the node database
+  ndb.sync
 end
 
