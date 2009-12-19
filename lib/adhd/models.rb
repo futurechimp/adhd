@@ -1,8 +1,23 @@
 # Key Restrictions ok internal_IDs: must only contain [a-z0-9-]
 
-class NodeDB
-  attr_accessor :local_node_db, :our_node
+class Array
+  def shuffle!
+    size.downto(1) { |n| push delete_at(rand(n)) }
+    self
+  end
+end
 
+class NodeDB
+  
+  attr_accessor :local_node_db, :our_node
+  
+  def initialize(our_nodev)
+    @our_node = our_nodev
+    
+    # Get the address of the CDB from the node
+    @local_node_db = our_nodev.get_node_db
+  end
+  
   def sync
     # We replicate our state to the management node(s)
     management_nodes = Node.by_is_management.reverse
@@ -19,10 +34,10 @@ class NodeDB
     #        availability. 
     
     management_nodes.each do |mng_node|
-      puts "Sync NodeDB with #{mng_node.name}"
       remote_db = mng_node.get_node_db
       if !(mng_node.name == our_node.name)
         begin 
+          puts "Sync NodeDB with #{mng_node.name}"
           local_node_db.replicate_from(remote_db)
           # TODO: Manage conflicts here
           local_node_db.replicate_to(remote_db)
@@ -77,6 +92,14 @@ class ShardRangeDB
 
   attr_accessor :nodes, :local_shard_db, :our_node  
 
+  def initialize(nodesv)
+    @nodes = nodesv
+    
+    # Automatically get our shard_db address from our own node name
+    @our_node = nodesv.our_node
+    @local_shard_db = nodesv.our_node.get_shard_db
+  end
+  
   def sync
     # We replicate our state from the management node(s)
     # We never push content if we are only storage
@@ -182,8 +205,53 @@ class ShardRangeDB
     content_shards
   end
   
+  def write_doc_directly(content_doc)
+    # Write a document directly to a nodes content repository
+    doc_shard = get_shard(content_doc.internal_id).first
+    doc_shard.get_nodes.each do |node|
+      # Try to write the doc to this node
+      begin
+        remote_ndb = NodeDB.new(node)
+        remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
+        remote_content_shard.this_shard_db.save_doc(content_doc)
+        break
+      rescue
+        puts "Could not put doc in node #{node.name}"
+        # TODO: change status or chose another management server
+        node.status = "UNAVAILABLE"
+        node.save
+      
+      end
+    end
+    
+  end
   
-
+  def get_doc_directly(internal_id)
+    # Write a document directly to a nodes content repository
+    doc_shard = get_shard(internal_id).first
+    
+    # TODO: Randomize the order of nodes for load balancing in retrieval!
+    docx = []  
+    doc_shard.get_nodes.each do |node|
+      # Try to write the doc to this node
+      begin
+        remote_ndb = NodeDB.new(node)
+        remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
+        
+        docx = ContentDoc.by_internal_id(:key => internal_id, :database => remote_content_shard.this_shard_db)
+        if docx.length > 0
+          break
+        end
+      rescue
+        puts "Could not put doc in node #{node.name}"
+        # TODO: change status or chose another management server
+        node.status = "UNAVAILABLE"
+        node.save      
+      end
+    end    
+  docx
+  end
+  
 end
 
 class ShardRange < CouchRest::ExtendedDocument
@@ -219,16 +287,40 @@ class ShardRange < CouchRest::ExtendedDocument
           }
         }"  
 
+  def get_nodes
+    # Return all nodes, with the master being first
+    all_nodes = node_list
+    all_nodes.delete(master_node)
+    all_nodes = [master_node] + all_nodes
+    allnodes
+  end
+
 end
 
 
 class ContentShard
-  attr_accessor :nodes, :this_shard, :our_node, :this_shard_db
+  attr_accessor :nodes, :this_shard, :our_node, :this_shard_db  
+
+  def initialize(nodesv, this_shardv)
+    @nodes = nodesv
+    @this_shard = this_shardv
+    
+    # Work out the rest
+    @our_node = nodesv.our_node
+    @this_shard_db = nodesv.our_node.get_content_db(this_shardv.shard_db_name)
+  end
 
   def in_shard?(internal_id)
      internal_id >= this_shard.range_start && internal_id < this_shard.range_end
   end
 
+  def write_doc(content_doc)
+    # Write a content document to this shard    
+    # Make sure it is in this shard
+    if in_shard? content_doc.internal_id
+      this_shard_db.save_doc(content_doc)
+    end
+  end
   
   def sync
     # A Shard only pushes with the master of the shard
@@ -289,6 +381,8 @@ class ContentDoc < CouchRest::ExtendedDocument
   property :size_bytes
   property :filenane
   property :mime_type
+  
+  view_by :internal_id
   
   # A special attachment "File" is expected to exist
 end 
