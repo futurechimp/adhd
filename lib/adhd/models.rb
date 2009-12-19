@@ -66,7 +66,11 @@ class Node  < CouchRest::ExtendedDocument
     server = CouchRest.new("#{url}")
     server.database!("#{name}_shard_db")
   end  
-
+  
+  def get_content_db(shard_db_name)
+    server = CouchRest.new("#{url}")
+    server.database!("#{name}_#{shard_db_name}_content_db")
+  end  
 end
 
 class ShardRangeDB
@@ -159,6 +163,26 @@ class ShardRangeDB
     end
     selected_shards
   end
+  
+  def get_content_shards
+    # Return the content_shards of our node
+    content_shards = []
+    ShardRange.by_node(:key => "node1").each do |s|
+      
+      # Build a content shard object
+      cs = ContentShard.new
+      cs.our_node = our_node
+      cs.this_shard = s
+      cs.nodes = nodes
+      cs.this_shard_db = our_node.get_content_db(s.shard_db_name)
+      
+      # add it to the list
+      content_shards << cs
+    end
+    content_shards
+  end
+  
+  
 
 end
 
@@ -193,7 +217,78 @@ class ShardRange < CouchRest::ExtendedDocument
               emit(node, 1);
             });
           }
-        }"
-  
+        }"  
+
 end
 
+
+class ContentShard
+  attr_accessor :nodes, :this_shard, :our_node, :this_shard_db
+
+  def in_shard?(internal_id)
+     internal_id >= this_shard.range_start && internal_id < this_shard.range_end
+  end
+
+  
+  def sync
+    # A Shard only pushes with the master of the shard
+    # or the node with the highest is_storage value alive
+    # Shard masters ensure changes are pushed to all    
+
+    # NOTE: This method needs serious refactoring
+
+    # Are we the shard master?
+    am_master = false
+    if our_node.name == this_shard.master_node
+      am_master = true      
+    end
+
+    if !am_master
+      begin
+        master_node = Nodes.by_name(this_shard.master_node).first
+        remotedb = MASTER_node.get_content_db(this_shard.shard_db_name)
+        this_shard_db.replicate_to(remote_db)
+        return # We sync-ed so job is done
+      rescue
+        # We flag the master as unavailable
+        if remote_node
+          master_node.status = "UNAVAILABLE"
+          master_node.save
+        end         
+      end
+    end
+    
+    # Either we are the master or the master has failed -- we replicate with 
+    # all nodes or the first available aside us and master
+    this_shard.node_list.each do |node_name|
+       if !(our_node.name == node_name) && !(this_shard.master_node == node_name)
+         begin
+           # Push all changes to the other nodes
+           remote_node = Nodes.by_name(node_name).first
+           remotedb = remote_node.get_content_db(this_shard.shard_db_name)
+           this_shard_db.replicate_to(remote_db)
+           break if !am_master
+         rescue
+           # Make sure that the node exist in the DB and flag it as unresponsive
+           if remote_node
+             remote_node.status = "UNAVAILABLE"
+             remote_node.save
+           end         
+         end
+       end
+
+    end    
+  end
+end
+
+class ContentDoc < CouchRest::ExtendedDocument
+  # NOTE: NO DEFAULT DATABASE IN THE OBJECT -- WE WILL BE STORING A LOT OF 
+  # DATABASES OF THIS TYPE.
+
+  property :internal_id
+  property :size_bytes
+  property :filenane
+  property :mime_type
+  
+  # A special attachment "File" is expected to exist
+end 
