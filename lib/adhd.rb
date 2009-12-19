@@ -64,15 +64,10 @@ if all_nodes.length == 1
 end
 
 # Lets build a nice NodeDB
-ndb = NodeDB.new
-ndb.local_node_db = node_db
-ndb.our_node = node
+ndb = NodeDB.new(node)
 
 # Lets build a nice ShardDB
-srdb = ShardRangeDB.new
-srdb.nodes = ndb
-srdb.our_node = node
-srdb.local_shard_db = node.get_shard_db
+srdb = ShardRangeDB.new(ndb)
 
 # If there are no shards make a few, if we are managers
 #puts "Create new ranges?"
@@ -83,8 +78,29 @@ if ShardRange.by_range_start.length == 0 && node.is_management
   srdb.build_shards(100)
 end
 
+# Polulate the shards with some nodes at random
+node_names = []
+all_nodes.each do |anode|
+  node_names << anode.name
+end
+
+ShardRange.by_range_start.each do |s|
+  if !s.node_list or s.node_list.length == 0
+    node_names.shuffle!
+    s.node_list = node_names[0..2]
+    s.master_node = node_names[0]
+    s.save
+  end
+
+end
+# Sync all the node databases
+
 ndb.sync # SYNC
 srdb.sync # SYNC
+
+srdb.get_content_shards.each do |content_shard_db|
+  content_shard_db.sync
+end
 
 get "/" do
   @all_nodes = Node.by_name
@@ -96,5 +112,9 @@ get "/sync" do
   ndb.sync
   # Sync the shard database
   srdb.sync
+
+  srdb.get_content_shards.each do |content_shard_db|
+    content_shard_db.sync
+  end
 end
 
