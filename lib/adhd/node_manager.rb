@@ -62,8 +62,8 @@ module Adhd
     def set_as_management_node_if_necessary
       all_nodes = Node.by_name
       if all_nodes.length == 1
-        node.is_management = 3
-        node.save
+        @our_node.is_management = 3
+        @our_node.save
       end
     end
 
@@ -79,7 +79,7 @@ module Adhd
       @contentdbs = @srdb.get_content_shards
 
     end
-    
+
     def build_shards
       if @our_node.is_management
 
@@ -87,7 +87,7 @@ module Adhd
           puts "Creating new ranges"
           @srdb.build_shards(100)
         end
-        
+
         # Populate the shards with some nodes at random
         node_names = []
         all_nodes = Node.by_name
@@ -102,7 +102,7 @@ module Adhd
             s.master_node = node_names[0]
             s.save
           end
-        end        
+        end
       end
     end
 
