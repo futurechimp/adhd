@@ -78,6 +78,19 @@ module Adhd
       # NOTE: we will have to refresh those then we are re-assigned shards
       @contentdbs = @srdb.get_content_shards
 
+      @conn_manager = ConnectionBank.new
+      @contentdbs.each do |content_shard|
+        conn = UpdateNotifierConnection.new(@config.node_url, 
+                                        @config.couchdb_server_port, 
+                                        content_shard.this_shard.shard_db_name, 
+                                        content_shard)
+      @conn_manager.add_connection(conn)      
+      end
+
+    end
+    
+    def run
+      @conn_manager.run_all
     end
     
     def build_shards
