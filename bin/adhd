@@ -12,12 +12,13 @@ def parse_config(file)
   @config = YAML.load_openstruct(File.read(file))
 end
 
-@command = ARGV.shift
+# @command = ARGV.shift
 
-options = {}
+#options = {}
 
 opts = OptionParser.new do |opts|
-  opts.on("-C", "--config C", "YAML config file") do |n|
+  opts.on("-c", "--config C", "YAML config file") do |n|
+    puts "Parsing config file #{n}"
     parse_config(n)
   end
 end

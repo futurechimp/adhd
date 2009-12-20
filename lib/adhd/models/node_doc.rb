@@ -1,4 +1,4 @@
-# Key Restrictions ok internal_IDs: must only contain [a-z0-9-]
+## Key Restrictions ok internal_IDs: must only contain [a-z0-9-]
 
 class NodeDB
   
@@ -48,10 +48,10 @@ class NodeDB
 end
 
 class Node  < CouchRest::ExtendedDocument
-  NODESERVER = CouchRest.new("#{ARGV[1]}")
-  NODESERVER.default_database = "#{ARGV[0]}_node_db"
+  #NODESERVER = CouchRest.new("#{ARGV[1]}")
+  #NODESERVER.default_database = "#{ARGV[0]}_node_db"
 
-  use_database NODESERVER.default_database
+  #use_database NODESERVER.default_database
 
   property :name
   property :url
@@ -67,17 +67,23 @@ class Node  < CouchRest::ExtendedDocument
 
   def get_node_db
     server = CouchRest.new("#{url}")
-    server.database!("#{name}_node_db")
+    db = server.database!("#{name}_node_db")
+    puts "Open db #{db}"
+    db
   end
 
   def get_shard_db
     server = CouchRest.new("#{url}")
-    server.database!("#{name}_shard_db")
+    db = server.database!("#{name}_shard_db")
+    puts "Open db #{db}"
+    db
   end  
   
   def get_content_db(shard_db_name)
     server = CouchRest.new("#{url}")
-    server.database!("#{name}_#{shard_db_name}_content_db")
+    db = server.database!("#{name}_#{shard_db_name}_content_db")
+    puts "Open db #{db}"
+    db
   end  
 end
 

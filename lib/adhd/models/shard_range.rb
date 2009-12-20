@@ -8,6 +8,9 @@ class ShardRangeDB
     # Automatically get our shard_db address from our own node name
     @our_node = nodesv.our_node
     @local_shard_db = nodesv.our_node.get_shard_db
+    
+    puts "Assign default database for shard ranges (#{@local_shard_db})"
+    ShardRange.use_database @local_shard_db
   end
   
   def sync
@@ -160,10 +163,9 @@ class ShardRangeDB
 end
 
 class ShardRange < CouchRest::ExtendedDocument
-  SHARDSERVER = CouchRest.new("#{ARGV[1]}")
-  SHARDSERVER.default_database = "#{ARGV[0]}_shard_db"
-
-  use_database SHARDSERVER.default_database
+  # SHARDSERVER = CouchRest.new("#{ARGV[1]}")
+  # SHARDSERVER.default_database = "#{ARGV[0]}_shard_db"
+  # use_database SHARDSERVER.default_database
 
   property :range_start
   property :range_end

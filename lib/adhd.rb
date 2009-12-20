@@ -3,9 +3,9 @@ require 'sinatra'
 require 'couchrest'
 require 'erb'
 require 'ruby-debug'
-require File.dirname(__FILE__) + '/adhd/models/NodeDoc'
-require File.dirname(__FILE__) + '/adhd/models/ShardRange'
-require File.dirname(__FILE__) + '/adhd/models/ContentShard'
+require File.dirname(__FILE__) + '/adhd/models/node_doc'
+require File.dirname(__FILE__) + '/adhd/models/shard_range'
+require File.dirname(__FILE__) + '/adhd/models/content_shard'
 
 # Start the server for now by cd'ing into the /lib directory and running the
 # following command:
@@ -25,14 +25,14 @@ require File.dirname(__FILE__) + '/adhd/models/ContentShard'
 # <port_number>: a port number to run on. If you're running more than one node locally
 #   for development purposes you'll need to pick a non-default port higher than 1024.
 
-#node_name = ARGV[1]
-#node_url = ARGV[2]
-#buddy_server_url = ARGV[3]
-#buddy_db =  ARGV[4]
+node_name = ARGV[0]
+node_url = ARGV[1]
+buddy_server_url = ARGV[2]
+buddy_db =  ARGV[3]
 
-#NODESERVER = CouchRest.new("#{node_url}")
-#NODESERVER.default_database = "#{node_name}_node_db"
-#node_db = CouchRest::Database.new(NODESERVER, "#{node_name}_node_db")
+NODESERVER = CouchRest.new("#{node_url}")
+NODESERVER.default_database = "#{node_name}_node_db"
+node_db = CouchRest::Database.new(NODESERVER, "#{node_name}_node_db")
 
 # sync the db with our buddy
 if buddy_server_url && buddy_db

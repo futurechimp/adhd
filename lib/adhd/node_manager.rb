@@ -1,20 +1,24 @@
 require 'rubygems'
 require 'couchrest'
 require 'ruby-debug'
-require File.dirname(__FILE__) + '/models'
+# require File.dirname(__FILE__) + '/models'
+require File.dirname(__FILE__) + '/models/node_doc'
+require File.dirname(__FILE__) + '/models/shard_range'
+require File.dirname(__FILE__) + '/models/content_shard'
 
 module Adhd
   class NodeManager
 
     def initialize(config)
       @config = config
-      @couch_server = CouchRest.new("#{config.node_url}:#{config.couchdb_server_port}")
-      @couch_server.default_database = "#{config.node_name}_node_db"
+      @couch_server = CouchRest.new("http://#{config.node_url}:#{config.couchdb_server_port}")
+      # @couch_server.default_database = "#{config.node_name}_node_db"
       @couch_db = CouchRest::Database.new(@couch_server, "#{config.node_name}_node_db")
       sync_with_buddy_node if config.buddy_server_url && config.buddy_server_db_name
-      initialize_node
+      @our_node = initialize_node
       set_as_management_node_if_necessary
       build_node_databases
+      build_shards
       sync_databases
     end
 
@@ -35,17 +39,21 @@ module Adhd
     # If there are other nodes with the name kill their records!
     #
     def initialize_node
-      node_candidates = ::Node.by_name(:key => @config.node_name)
+      puts "Initialize node #{@config.node_name}"
+      Node.use_database @couch_db
+      node_candidates = Node.by_name(:key => @config.node_name)
+      # node_candidates = @couch_db.view("by_name", {:key => @config.node_name})
       node = node_candidates.pop
       node = Node.new if node.nil?
       node_candidates.each do |other_me|
         other_me.destroy # destroy other records
       end
       # Update our very own record
-      node.name = node_name
-      node.url = node_url
+      node.name = @config.node_name
+      node.url = "http://#{@config.node_url}:#{@config.couchdb_server_port}"
       node.status = "RUNNING"
       node.save
+      node # Save our node as instance variable
     end
 
     # We check if we are the first node. If we are the first node, we set
@@ -61,37 +69,48 @@ module Adhd
 
     def build_node_databases
       # Lets build a nice NodeDB
-      @ndb = NodeDB.new(node)
+      @ndb = NodeDB.new(@our_node)
 
       # Lets build a nice ShardDB
-      @srdb = ShardRangeDB.new(ndb)
+      @srdb = ShardRangeDB.new(@ndb)
 
-      if ShardRange.by_range_start.length == 0 && node.is_management
-        puts "Creating new ranges"
-        @srdb.build_shards(100)
-      end
+      # Get all content shard databases
+      # NOTE: we will have to refresh those then we are re-assigned shards
+      @contentdbs = @srdb.get_content_shards
 
-      # Populate the shards with some nodes at random
-      node_names = []
-      all_nodes.each do |anode|
-        node_names << anode.name
-      end
+    end
+    
+    def build_shards
+      if @our_node.is_management
 
-      ShardRange.by_range_start.each do |s|
-        if !s.node_list or s.node_list.length == 0
-          node_names.shuffle!
-          s.node_list = node_names[0..2]
-          s.master_node = node_names[0]
-          s.save
+        if ShardRange.by_range_start.length == 0
+          puts "Creating new ranges"
+          @srdb.build_shards(100)
         end
+        
+        # Populate the shards with some nodes at random
+        node_names = []
+        all_nodes = Node.by_name
+        all_nodes.each do |anode|
+          node_names << anode.name
+        end
+
+        ShardRange.by_range_start.each do |s|
+          if !s.node_list or s.node_list.length == 0
+            node_names.shuffle!
+            s.node_list = node_names[0..2]
+            s.master_node = node_names[0]
+            s.save
+          end
+        end        
       end
     end
 
     def sync_databases
-      ndb.sync # SYNC
-      srdb.sync # SYNC
+      @ndb.sync # SYNC
+      @srdb.sync # SYNC
 
-      srdb.get_content_shards.each do |content_shard_db|
+      @contentdbs.each do |content_shard_db|
         content_shard_db.sync
       end
     end
