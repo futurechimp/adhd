@@ -28,7 +28,8 @@ opts.parse! ARGV
 @node_manager = Adhd::NodeManager.new(@config)
 
 EM.run {
-  puts "Starting EventMachine reactor loop..."
-  EM.connect @config.node_url, @config.couchdb_server_port, Adhd::DbUpdateNotifier, @node_manager
+  # puts "Starting EventMachine reactor loop..."
+  # EM.connect @config.node_url, @config.couchdb_server_port, Adhd::DbUpdateNotifier, @node_manager
+  @node_manager.run
 }
 

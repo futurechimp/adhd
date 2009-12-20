@@ -40,7 +40,7 @@ class ContentShard
     if !am_master
       begin
         master_node = Nodes.by_name(this_shard.master_node).first
-        remotedb = MASTER_node.get_content_db(this_shard.shard_db_name)
+        remotedb = master_node.get_content_db(this_shard.shard_db_name)
         this_shard_db.replicate_to(remote_db)
         return # We sync-ed so job is done
       rescue
