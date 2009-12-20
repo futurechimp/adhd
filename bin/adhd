@@ -1,15 +1,33 @@
 #!/usr/bin/env ruby
+require File.dirname(__FILE__) + '/../lib/ext/hash_to_openstruct'
+require File.dirname(__FILE__) + '/../lib/adhd/node_manager'
+require File.dirname(__FILE__) + '/../lib/adhd/reactor'
 
-# adhd command line interface script.
-# Run <tt>ahdh -h</tt> to get more usage.
-require File.dirname(__FILE__) + '/../lib/adhd'
-require 'thin'
+require 'optparse'
+require 'ftools'
+require 'yaml'
+require 'socket'
 
-rackup_file = "#{File.dirname(__FILE__)}/../lib/adhd/config.ru"
+def parse_config(file)
+  @config = YAML.load_openstruct(File.read(file))
+end
 
-argv = ARGV
-argv << ["-R", rackup_file] unless ARGV.include?("-R")
-argv << ["-p", "2001"] unless ARGV.include?("-p")
+@command = ARGV.shift
 
-Thin::Runner.new(argv.flatten).run!
+options = {}
+
+opts = OptionParser.new do |opts|
+  opts.on("-C", "--config C", "YAML config file") do |n|
+    parse_config(n)
+  end
+end
+
+opts.parse! ARGV
+
+@node_manager = Adhd::NodeManager.new(@config)
+
+EM.run {
+  puts "Starting EventMachine reactor loop..."
+  EM.connect @config.node_url, @config.couchdb_server_port, Adhd::DbUpdateNotifier, @node_manager
+}
 
