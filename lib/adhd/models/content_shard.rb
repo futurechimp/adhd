@@ -39,11 +39,13 @@ class ContentShard
 
     if !am_master
       begin
-        master_node = Nodes.by_name(this_shard.master_node).first
+        master_node = Node.by_name(:key => this_shard.master_node).first
+        # puts "Node #{this_shard.master_node} extracted #{master_node}"
         remotedb = master_node.get_content_db(this_shard.shard_db_name)
         this_shard_db.replicate_to(remote_db)
+        puts "Sync with #{remote_db}" if this_shard.shard_db_name == "sh_7k_to_7x"
         return # We sync-ed so job is done
-      rescue
+      rescue Exception => e
         # We flag the master as unavailable
         if master_node
           master_node.status = "UNAVAILABLE"
@@ -58,12 +60,14 @@ class ContentShard
        if !(our_node.name == node_name) && !(this_shard.master_node == node_name)
          begin
            # Push all changes to the other nodes
-           remote_node = Nodes.by_name(node_name).first
-           remotedb = remote_node.get_content_db(this_shard.shard_db_name)
+           remote_node = Node.by_name(:key =>  node_name).first
+           remote_db = remote_node.get_content_db(this_shard.shard_db_name)
            this_shard_db.replicate_to(remote_db)
+           puts "Sync with #{remote_db}" if this_shard.shard_db_name == "sh_7k_to_7x"
            break if !am_master
          rescue
            # Make sure that the node exist in the DB and flag it as unresponsive
+           puts "Blowing while sync with #{remote_db}"
            if remote_node
              remote_node.status = "UNAVAILABLE"
              remote_node.save

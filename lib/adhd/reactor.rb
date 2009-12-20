@@ -45,14 +45,18 @@ module  Adhd
     #
     def post_init
       # NOTE: full domain name needed for virtual hosting
-      send_data "GET /#{@db_name}/_changes?feed=continuous&heartbeat=5000\r\n\r\n"
+      req = "GET #{@conn_obj.base_url}/#{@db_name}/_changes?feed=continuous&heartbeat=5000\r\n\r\n"
+      puts req
+      send_data req
     end
 
     # Shoots update notifications from CouchDB to the @conn.
     #
     def receive_data data
-      puts "received_data: #{data}}"
-      @conn_obj.event_handler(data) unless data =~ /[ \r\n]*/
+      
+      # puts "received_data: #{data}"
+      # puts "||#{data}||length=#{data.length}||#{data.dump}||"
+      @conn_obj.event_handler(data) unless data == "\n"
     end
 
     def close_connection
@@ -75,7 +79,7 @@ module  Adhd
   # In practice we will have two types of connections: Replicate and Notify.
 
   class UpdateNotifierConnection
-    attr_accessor :db_name
+    attr_accessor :db_name, :base_url
 
     def initialize(node_url, couchdb_server_port, db_name, db_obj_for_sync)
       @node_url = node_url
@@ -83,6 +87,7 @@ module  Adhd
       @db_name = db_name
       @db_obj_for_sync = db_obj_for_sync
       @status = "NOTRUNNING"
+      @base_url = "http://#{@node_url}:#{@couchdb_server_port}"
     end
 
     def start
@@ -92,7 +97,7 @@ module  Adhd
     end
 
     def event_handler data
-      puts "Run a crazy sync on db #{@db_name}"
+      puts "Run a crazy sync on db #{@db_name}" if @db_name == "gd2_sh_7k_to_7x_content_db"
       @db_obj_for_sync.sync
     end
 

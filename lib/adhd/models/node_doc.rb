@@ -68,21 +68,21 @@ class Node  < CouchRest::ExtendedDocument
   def get_node_db
     server = CouchRest.new("#{url}")
     db = server.database!("#{name}_node_db")
-    puts "Open db #{db}"
+    # puts "Open db #{db}"
     db
   end
 
   def get_shard_db
     server = CouchRest.new("#{url}")
     db = server.database!("#{name}_shard_db")
-    puts "Open db #{db}"
+    # puts "Open db #{db}"
     db
   end  
   
   def get_content_db(shard_db_name)
     server = CouchRest.new("#{url}")
     db = server.database!("#{name}_#{shard_db_name}_content_db")
-    puts "Open db #{db}"
+    # puts "Open db #{db}"
     db
   end  
 end

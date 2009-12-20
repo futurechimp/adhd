@@ -82,7 +82,7 @@ module Adhd
       @contentdbs.each do |content_shard|
         conn = UpdateNotifierConnection.new(@config.node_url, 
                                         @config.couchdb_server_port, 
-                                        content_shard.this_shard.shard_db_name, 
+                                        @our_node.name + "_" + content_shard.this_shard.shard_db_name + "_content_db", # NOTE: Sooo ugly!
                                         content_shard)
       @conn_manager.add_connection(conn)      
       end
