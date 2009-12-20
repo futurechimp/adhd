@@ -51,9 +51,10 @@ module  Adhd
     # Shoots update notifications from CouchDB to the @conn.
     #
     def receive_data data
-      @conn_obj.event_handler(data)
+      puts "received_data: #{data}}"
+      @conn_obj.event_handler(data) unless data =~ /[ \r\n]*/
     end
-    
+
     def close_connection
       @conn_obj.close_handler(data)
     end
@@ -63,10 +64,10 @@ module  Adhd
 
   # Note: Some of manos's thoughts on how to manage our connections and events.
   #       We should build a class called connection_manager that we ask to build
-  #       and listen to connections, as well as route events. Its job is to 
+  #       and listen to connections, as well as route events. Its job is to
   #       re-open them if they are closed or times out, mark nodes as UNAVAILABLE
-  #       and notify us back when data (i.e. an update) arrives. It would also be 
-  #       nifty if each connection was associated with a predicate: once this 
+  #       and notify us back when data (i.e. an update) arrives. It would also be
+  #       nifty if each connection was associated with a predicate: once this
   #       predicate is false we can simply close the connection. For example upon
   #       being given control of a different content shard, or a different master
   #       for the shard.
@@ -75,37 +76,37 @@ module  Adhd
 
   class UpdateNotifierConnection
     attr_accessor :db_name
-  
+
     def initialize(node_url, couchdb_server_port, db_name, db_obj_for_sync)
       @node_url = node_url
       @couchdb_server_port = couchdb_server_port
       @db_name = db_name
       @db_obj_for_sync = db_obj_for_sync
       @status = "NOTRUNNING"
-    end        
-    
+    end
+
     def start
       puts "Register the connection for #{@db_name}"
-      EM.connect @node_url, @couchdb_server_port, Adhd::DbUpdateNotifier, @db_name, self 
+      EM.connect @node_url, @couchdb_server_port, Adhd::DbUpdateNotifier, @db_name, self
       @status = "RUNNING"
     end
-    
+
     def event_handler data
       puts "Run a crazy sync on db #{@db_name}"
       @db_obj_for_sync.sync
     end
-    
+
     def close_handler
       puts "Closed abnormally #{reason}"
       @status = "NOTRUNNING"
     end
-    
+
     def down_for_good(reason)
       if reason
         puts "Closed for good #{reason}"
       end
-    end 
-    
+    end
+
     def keep_alive?
       # Returns the truth value of the predicate
       true
@@ -114,28 +115,28 @@ module  Adhd
     def should_start?
       !(@status == "RUNNING")
     end
-    
+
     def is_closed?
       (@status == "NOTRUNNING")
     end
 
-    
+
   end
 
-  class Connection        
+  class Connection
     #def on_teardown(&block)
     #  # Set the handler to be called then a connection is dead
     #  block(self) # Run the teardown handler
     #end
-    
+
     def should_start?
       !(@status == "RUNNING")
     end
-    
+
     def is_closed?
       (@status == "NOTRUNNING")
     end
-          
+
   end
 
   class ConnectionBank
@@ -143,7 +144,7 @@ module  Adhd
     def initialize
       @our_connections = []
     end
-    
+
     def add_connection(conn)
       # If it is happy to run, add it to the list and start it!
       if conn.keep_alive?
@@ -152,7 +153,7 @@ module  Adhd
           # conn.on_teardown(|c| { rerun(c) })
       end
     end
-    
+
     def rerun(conn)
       # When a connection is down, we check to see if it wants to be kept
       # alive, and restart it otherwise we remove it from the list.
@@ -169,22 +170,23 @@ module  Adhd
         @our_connections.delete(conn)
         conn.down_for_good(nil)
       end
-      
+
     end
 
     def run_all
       # Go through all connections and run them all
       # Run within EM.run loop
-      puts "Connection bank runs all... (#{@our_connections.length} connections)" 
+      puts "Connection bank runs all... (#{@our_connections.length} connections)"
       @our_connections.each do |c|
         if c.is_closed?
           # puts "Actually start #{c.db_name}..."
           rerun(c)
         end
       end
-            
-    end 
-    
+
+    end
+
   end
 
 end
+
