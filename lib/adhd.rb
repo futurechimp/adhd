@@ -23,14 +23,14 @@ require File.dirname(__FILE__) + '/adhd/models'
 # <port_number>: a port number to run on. If you're running more than one node locally
 #   for development purposes you'll need to pick a non-default port higher than 1024.
 
-node_name = ARGV[1]
-node_url = ARGV[2]
-buddy_server_url = ARGV[3]
-buddy_db =  ARGV[4]
+#node_name = ARGV[1]
+#node_url = ARGV[2]
+#buddy_server_url = ARGV[3]
+#buddy_db =  ARGV[4]
 
-NODESERVER = CouchRest.new("#{node_url}")
-NODESERVER.default_database = "#{node_name}_node_db"
-node_db = CouchRest::Database.new(NODESERVER, "#{node_name}_node_db")
+#NODESERVER = CouchRest.new("#{node_url}")
+#NODESERVER.default_database = "#{node_name}_node_db"
+#node_db = CouchRest::Database.new(NODESERVER, "#{node_name}_node_db")
 
 # sync the db with our buddy
 if buddy_server_url && buddy_db
@@ -105,7 +105,7 @@ end
 get "/" do
   @all_nodes = Node.by_name
   erb :index
-end 
+end
 
 get "/sync" do
   # Sync the node database

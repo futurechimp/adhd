@@ -4,7 +4,7 @@ require 'eventmachine'
 module  Adhd
 
   # This module gets mixed into the EventMachine reactor loop, and sends events
-  # to our Adhd::Node which is hanging around waiting for shit to happen.
+  # to our Adhd::Node which is hanging around waiting for stuff to happen.
   #
   # Currently it just illustrates the fact that we can fire up an EventMachine
   # and have this reactor get mixed in as glue code to our Node.
@@ -29,14 +29,14 @@ module  Adhd
 
   end
 
-  # A reactor that makes a long-running request to a CouchDB instance (using
-  # Comet technology) and continually sends any update notifications that it
-  # gets back to its @node.
+  # A notifier client that makes a long-running request to a CouchDB instance
+  # on a socket and continually sends any update notifications that it
+  # receives back to its @node.
   #
-  module DbUpdateReactor
+  module DbUpdateNotifier
 
     def initialize(node)
-      puts "Db update reactor start..."
+      puts "Db update notifier start..."
       @node = node
     end
 

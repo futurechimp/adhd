@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require File.dirname(__FILE__) + '/../lib/ext/hash_to_openstruct'
-require File.dirname(__FILE__) + '/../lib/adhd/node'
+require File.dirname(__FILE__) + '/../lib/adhd/node_manager'
 require File.dirname(__FILE__) + '/../lib/adhd/reactor'
 
 require 'optparse'
@@ -24,10 +24,10 @@ end
 
 opts.parse! ARGV
 
-@node = Adhd::Node.new(@config)
+@node_manager = Adhd::NodeManager.new(@config)
 
 EM.run {
   puts "Starting EventMachine reactor loop..."
-  EM.connect @config.node_url, @config.couchdb_server_port, Adhd::DbUpdateReactor, @node
+  EM.connect @config.node_url, @config.couchdb_server_port, Adhd::DbUpdateNotifier, @node_manager
 }
 
