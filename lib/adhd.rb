@@ -3,7 +3,9 @@ require 'sinatra'
 require 'couchrest'
 require 'erb'
 require 'ruby-debug'
-require File.dirname(__FILE__) + '/adhd/models'
+require File.dirname(__FILE__) + '/adhd/models/NodeDoc'
+require File.dirname(__FILE__) + '/adhd/models/ShardRange'
+require File.dirname(__FILE__) + '/adhd/models/ContentShard'
 
 # Start the server for now by cd'ing into the /lib directory and running the
 # following command:
@@ -84,6 +86,15 @@ all_nodes.each do |anode|
   node_names << anode.name
 end
 
+# Allows us to shuffle arrays
+class Array
+  def shuffle!
+    size.downto(1) { |n| push delete_at(rand(n)) }
+    self
+  end
+end
+
+
 ShardRange.by_range_start.each do |s|
   if !s.node_list or s.node_list.length == 0
     node_names.shuffle!
@@ -93,6 +104,14 @@ ShardRange.by_range_start.each do |s|
   end
 
 end
+
+# Print all the shards we are in charge of
+shard_name = []
+srdb.get_content_shards.each do |content_shard_db|
+  shard_name << content_shard_db.this_shard.shard_db_name
+end
+puts "Storing #{shard_name}"
+
 # Sync all the node databases
 
 ndb.sync # SYNC
