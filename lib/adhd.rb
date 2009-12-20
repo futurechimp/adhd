@@ -94,7 +94,6 @@ class Array
   end
 end
 
-
 ShardRange.by_range_start.each do |s|
   if !s.node_list or s.node_list.length == 0
     node_names.shuffle!
@@ -105,19 +104,20 @@ ShardRange.by_range_start.each do |s|
 
 end
 
+contentdbs = srdb.get_content_shards
+
 # Print all the shards we are in charge of
 shard_name = []
-srdb.get_content_shards.each do |content_shard_db|
+contentdbs.each do |content_shard_db|
   shard_name << content_shard_db.this_shard.shard_db_name
 end
 puts "Storing #{shard_name}"
 
 # Sync all the node databases
-
 ndb.sync # SYNC
 srdb.sync # SYNC
 
-srdb.get_content_shards.each do |content_shard_db|
+contentdbs.each do |content_shard_db|
   content_shard_db.sync
 end
 
@@ -132,7 +132,7 @@ get "/sync" do
   # Sync the shard database
   srdb.sync
 
-  srdb.get_content_shards.each do |content_shard_db|
+  contentdbs.each do |content_shard_db|
     content_shard_db.sync
   end
 end
