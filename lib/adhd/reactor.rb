@@ -39,6 +39,7 @@ module  Adhd
       puts "Db update notifier start..."
       @db_name = db_name
       @conn_obj = conn_obj
+      @buffer = ""
     end
 
     # Makes a long-running request to a CouchDB instance's _changes URL.
@@ -52,11 +53,22 @@ module  Adhd
 
     # Shoots update notifications from CouchDB to the @conn.
     #
-    def receive_data data
-      
+    def receive_data data      
       # puts "received_data: #{data}"
       # puts "||#{data}||length=#{data.length}||#{data.dump}||"
-      @conn_obj.event_handler(data) unless data == "\n"
+      
+      @buffer += data # Add the data to the current buffer
+      updates = []
+      if @buffer =~ /(\{[^\n]+\}\n)/
+        updates += $~.to_a
+        # Trim the buffer to $_.end(0)
+        @buffer = @buffer[$~.end(0)..-1]
+      end
+      
+      # Regexp for JSON updates is /\{[\n]\}+/
+      updates.each do |json_event|
+        @conn_obj.event_handler(json_event) unless data == "\n"
+      end
     end
 
     def close_connection
@@ -97,7 +109,8 @@ module  Adhd
     end
 
     def event_handler data
-      puts "Run a crazy sync on db #{@db_name}" if @db_name == "gd2_sh_7k_to_7x_content_db"
+      # puts "||#{data}||nn"
+      puts "Run a crazy sync on db #{@db_name}"
       @db_obj_for_sync.sync
     end
 

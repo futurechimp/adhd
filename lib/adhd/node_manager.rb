@@ -88,7 +88,9 @@ module Adhd
                                         @config.couchdb_server_port, 
                                         @our_node.name + "_" + content_shard.this_shard.shard_db_name + "_content_db", # NOTE: Sooo ugly!
                                         content_shard)
-      @conn_manager.add_connection(conn)      
+        @conn_manager.add_connection(conn)
+        puts "Observing DB #{content_shard.this_shard.shard_db_name}"      
+        break # DEBUG -- REMOVE LATER
       end
 
     end

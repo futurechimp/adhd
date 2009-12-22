@@ -11,7 +11,7 @@ class ContentShard
     @our_node = nodesv.our_node
     @this_shard_db = nodesv.our_node.get_content_db(this_shardv.shard_db_name)
     
-    @last_sync_seq = @this_shard_db.info['update_seq']
+    @last_sync_seq = 0 # @this_shard_db.info['update_seq']
 
 
   end
