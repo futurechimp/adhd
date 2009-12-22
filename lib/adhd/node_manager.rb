@@ -29,9 +29,13 @@ module Adhd
     # Sync the db with our buddy
     #
     def sync_with_buddy_node
-      buddy_server = CouchRest.new("#{@config.buddy_server_url}")
-      buddy_db = CouchRest::Database.new(buddy_server, @config.buddy_server_db_name + "_node_db")
-      @couch_db.replicate_from(buddy_db)
+      begin
+        buddy_server = CouchRest.new("#{@config.buddy_server_url}")
+        buddy_db = CouchRest::Database.new(buddy_server, @config.buddy_server_db_name + "_node_db")
+        @couch_db.replicate_from(buddy_db)
+      rescue
+        puts "Could not buddy up with node #{@config.buddy_server_db_name}"
+      end
     end
 
     # Retrieve our own node record from CouchDB by our name.

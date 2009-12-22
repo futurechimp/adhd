@@ -10,6 +10,10 @@ class ContentShard
     # Work out the rest
     @our_node = nodesv.our_node
     @this_shard_db = nodesv.our_node.get_content_db(this_shardv.shard_db_name)
+    
+    @last_sync_seq = @this_shard_db.info['update_seq']
+
+
   end
 
   def in_shard?(internal_id)
@@ -30,6 +34,13 @@ class ContentShard
     # Shard masters ensure changes are pushed to all    
 
     # NOTE: This method needs serious refactoring
+    if @this_shard_db.info['update_seq'] == @last_sync_seq
+      # No need to update
+      return
+    end
+    
+    puts "Sync #{our_node.name} with #{this_shard.node_list.join(",")}"
+
 
     # Are we the shard master?
     am_master = false
@@ -40,13 +51,15 @@ class ContentShard
     if !am_master
       begin
         master_node = Node.by_name(:key => this_shard.master_node).first
-        # puts "Node #{this_shard.master_node} extracted #{master_node}"
-        remotedb = master_node.get_content_db(this_shard.shard_db_name)
+        puts "Node #{this_shard.master_node} extracted #{master_node}"
+        remote_db = master_node.get_content_db(this_shard.shard_db_name)
         this_shard_db.replicate_to(remote_db)
-        puts "Sync with #{remote_db}" if this_shard.shard_db_name == "sh_7k_to_7x"
+        puts "Sync with master #{remote_db}"
+        @last_sync_seq = @this_shard_db.info['update_seq']
         return # We sync-ed so job is done
       rescue Exception => e
         # We flag the master as unavailable
+        puts "Exception: #{e}"
         if master_node
           master_node.status = "UNAVAILABLE"
           master_node.save
@@ -63,8 +76,11 @@ class ContentShard
            remote_node = Node.by_name(:key =>  node_name).first
            remote_db = remote_node.get_content_db(this_shard.shard_db_name)
            this_shard_db.replicate_to(remote_db)
-           puts "Sync with #{remote_db}" if this_shard.shard_db_name == "sh_7k_to_7x"
-           break if !am_master
+           puts "Sync with #{remote_db}"
+           if !am_master
+            @last_sync_seq = @this_shard_db.info['update_seq']
+            break
+           end
          rescue
            # Make sure that the node exist in the DB and flag it as unresponsive
            puts "Blowing while sync with #{remote_db}"
@@ -73,6 +89,7 @@ class ContentShard
              remote_node.save
            end         
          end
+         @last_sync_seq = @this_shard_db.info['update_seq']
        end
 
     end    
