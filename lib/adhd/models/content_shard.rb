@@ -12,8 +12,6 @@ class ContentShard
     @this_shard_db = nodesv.our_node.get_content_db(this_shardv.shard_db_name)
     
     @last_sync_seq = 0 # @this_shard_db.info['update_seq']
-
-
   end
 
   def in_shard?(internal_id)
@@ -51,6 +49,11 @@ class ContentShard
     if !am_master
       begin
         master_node = Node.by_name(:key => this_shard.master_node).first
+        # Check that the master is online
+        if master_node.status ==  "UNAVAILABLE"
+          # TODO: Define a proper exception for trying to access dead nodes
+          throw Exception.new("Master is off-line")
+        end        
         puts "Node #{this_shard.master_node} extracted #{master_node}"
         remote_db = master_node.get_content_db(this_shard.shard_db_name)
         this_shard_db.replicate_to(remote_db)
@@ -60,7 +63,7 @@ class ContentShard
       rescue Exception => e
         # We flag the master as unavailable
         puts "Exception: #{e}"
-        if master_node
+        if master_node && !(master_node.status ==  "UNAVAILABLE")
           master_node.status = "UNAVAILABLE"
           master_node.save
         end         
@@ -74,21 +77,33 @@ class ContentShard
          begin
            # Push all changes to the other nodes
            remote_node = Node.by_name(:key =>  node_name).first
+           if remote_node.status ==  "UNAVAILABLE"
+            # TODO: Define a proper exception for trying to access dead nodes   
+            throw Exception.new("Node is off-line")
+           end
            remote_db = remote_node.get_content_db(this_shard.shard_db_name)
            this_shard_db.replicate_to(remote_db)
            puts "Sync with #{remote_db}"
            if !am_master
+            # NOTE: How to build skynet, Note 2
+            #       We are doing some "gonzo" replication, here. Our master is
+            #       clearly down so we find the second best node; we push our 
+            #       changes to this node, and now also *replicate from* 
+            #       that node.
+            this_shard_db.replicate_from(remote_db)
             @last_sync_seq = @this_shard_db.info['update_seq']
             break
            end
          rescue
            # Make sure that the node exist in the DB and flag it as unresponsive
            puts "Blowing while sync with #{remote_db}"
-           if remote_node
+           if remote_node && !(remote_node.status ==  "UNAVAILABLE" )
              remote_node.status = "UNAVAILABLE"
              remote_node.save
            end         
          end
+         # This is not strictly the last successful sync -- we could reach 
+         # this point if all nodes are unavailale -- is this a problem?
          @last_sync_seq = @this_shard_db.info['update_seq']
        end
 
