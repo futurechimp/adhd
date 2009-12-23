@@ -1,12 +1,3 @@
-<<<<<<< HEAD:test/test_adhd.rb
-require 'helper'
-
-class TestAdhd < Test::Unit::TestCase
-  should "probably rename this file and start testing for real" do
-    flunk "hey buddy, you should probably rename this file and start testing for real"
-  end
-end
-=======
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
@@ -80,5 +71,3 @@ class TestAdhd <  Test::Unit::TestCase
   private
 
 end
-
->>>>>>> 15388c36a078b8eee9bc17c79501985e54be519b:test/test_adhd.rb

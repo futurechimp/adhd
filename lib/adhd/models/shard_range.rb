@@ -106,7 +106,8 @@ class ShardRangeDB
     doc_shard.get_nodes.each do |node|
       # Try to write the doc to this node
       begin
-        remote_ndb = NodeDB.new(node)
+        remote_node = Node.by_name(:key => node).first
+        remote_ndb = NodeDB.new(remote_node)
         remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
         remote_content_shard.this_shard_db.save_doc(content_doc)
         break
@@ -130,7 +131,8 @@ class ShardRangeDB
     doc_shard.get_nodes.each do |node|
       # Try to write the doc to this node
       begin
-        remote_ndb = NodeDB.new(node)
+        remote_node = Node.by_name(:key => node).first
+        remote_ndb = NodeDB.new(remote_node)
         remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
         
         docx = ContentDoc.by_internal_id(:key => internal_id, :database => remote_content_shard.this_shard_db)
