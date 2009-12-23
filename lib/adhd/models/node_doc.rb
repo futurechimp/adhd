@@ -28,23 +28,14 @@ class NodeDB
     
     management_nodes.each do |mng_node|
       remote_db = mng_node.get_node_db
-      if !(mng_node.name == our_node.name)
-        begin 
-          
-          local_node_db.replicate_from(remote_db)
-          # TODO: Manage conflicts here
-          local_node_db.replicate_to(remote_db)
-          break if !our_node.is_management # Only need to contact one node
-        rescue
-          puts "Could not connect to DB node #{mng_node.name}"
-          # TODO: change status or chose another management server
-          mng_node.status = "UNAVAILABLE"
-          mng_node.save
-        end     
-      end
+      bool_from = @our_node.replicate_from(local_node_db, mng_node, remote_db)
+      bool_to = @our_node.replicate_to(local_node_db, mng_node, remote_db)
+      if bool_from && bool_to && !our_node.is_management
+         break
+      end       
     end
   end 
-
+    
 end
 
 class Node  < CouchRest::ExtendedDocument
@@ -85,5 +76,49 @@ class Node  < CouchRest::ExtendedDocument
     # puts "Open db #{db}"
     db
   end  
+
+  # Replicating databases and marking nodes as unavailable
+  # In the future we should hook these into a "replication manager"
+  # for databases. The manager should set up continuous replication across
+  # databases, and only do a replication after some time lapses.
+
+  def replicate_to(local_db, other_node, remote_db)
+    # Do not try to contact unavailable nodes
+    return false if other_node.status == "UNAVAILABLE"
+    # No point replicating to ourselves    
+    return false if !(name == other_node.name)
+    
+    begin  
+      # Replicate to other node is possible
+      local_db.replicate_to(remote_db)
+      return true
+    rescue
+      # Other node turns out to be unavailable
+      other_node.status = "UNAVAILABLE"
+      other_node.save
+      return false
+    end
+  end   
+  
+  def replicate_from(local_db, other_node, remote_db)
+    # Do not try to contact unavailable nodes
+    return false if other_node.status == "UNAVAILABLE"
+    # No point replicating to ourselves    
+    return false if !(name == other_node.name)
+    
+    begin  
+      # Replicate to other node is possible
+      local_db.replicate_from(remote_db)
+      return true
+    rescue
+      # Other node turns out to be unavailable
+      other_node.status = "UNAVAILABLE"
+      other_node.save
+      return false
+    end
+
+  end
+
+
 end
 

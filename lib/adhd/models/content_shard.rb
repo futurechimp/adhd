@@ -32,83 +32,45 @@ class ContentShard
     # Shard masters ensure changes are pushed to all    
 
     # NOTE: This method needs serious refactoring
-    if @this_shard_db.info['update_seq'] == @last_sync_seq
-      # No need to update
-      return
-    end
+    # No need to update
+    return if @this_shard_db.info['update_seq'] == @last_sync_seq
     
-    puts "Sync #{our_node.name} with #{this_shard.node_list.join(",")}"
-
-
     # Are we the shard master?
-    am_master = false
-    if our_node.name == this_shard.master_node
-      am_master = true      
-    end
+    am_master = (our_node.name == this_shard.master_node)
 
     if !am_master
-      begin
-        master_node = Node.by_name(:key => this_shard.master_node).first
-        # Check that the master is online
-        if master_node.status ==  "UNAVAILABLE"
-          # TODO: Define a proper exception for trying to access dead nodes
-          throw Exception.new("Master is off-line")
-        end        
-        puts "Node #{this_shard.master_node} extracted #{master_node}"
-        remote_db = master_node.get_content_db(this_shard.shard_db_name)
-        this_shard_db.replicate_to(remote_db)
-        puts "Sync with master #{remote_db}"
+      master_node = Node.by_name(:key => this_shard.master_node).first
+      remote_db = master_node.get_content_db(this_shard.shard_db_name)
+      bool_to = @our_node.replicate_to(this_shard_db, master_node, remote_db)
+      if bool_to
         @last_sync_seq = @this_shard_db.info['update_seq']
-        return # We sync-ed so job is done
-      rescue Exception => e
-        # We flag the master as unavailable
-        puts "Exception: #{e}"
-        if master_node && !(master_node.status ==  "UNAVAILABLE")
-          master_node.status = "UNAVAILABLE"
-          master_node.save
-        end         
+        return
       end
     end
     
     # Either we are the master or the master has failed -- we replicate with 
     # all nodes or the first available aside us and master
+    all_good = true
     this_shard.node_list.each do |node_name|
-       if !(our_node.name == node_name) && !(this_shard.master_node == node_name)
-         begin
-           # Push all changes to the other nodes
-           remote_node = Node.by_name(:key =>  node_name).first
-           if remote_node.status ==  "UNAVAILABLE"
-            # TODO: Define a proper exception for trying to access dead nodes   
-            throw Exception.new("Node is off-line")
-           end
-           remote_db = remote_node.get_content_db(this_shard.shard_db_name)
-           this_shard_db.replicate_to(remote_db)
-           puts "Sync with #{remote_db}"
-           if !am_master
-            # NOTE: How to build skynet, Note 2
-            #       We are doing some "gonzo" replication, here. Our master is
-            #       clearly down so we find the second best node; we push our 
-            #       changes to this node, and now also *replicate from* 
-            #       that node.
-            this_shard_db.replicate_from(remote_db)
-            @last_sync_seq = @this_shard_db.info['update_seq']
-            break
-           end
-         rescue
-           # Make sure that the node exist in the DB and flag it as unresponsive
-           puts "Blowing while sync with #{remote_db}"
-           if remote_node && !(remote_node.status ==  "UNAVAILABLE" )
-             remote_node.status = "UNAVAILABLE"
-             remote_node.save
-           end         
-         end
-         # This is not strictly the last successful sync -- we could reach 
-         # this point if all nodes are unavailale -- is this a problem?
-         @last_sync_seq = @this_shard_db.info['update_seq']
-       end
+       # Push all changes to the other nodes
+       remote_node = Node.by_name(:key =>  node_name).first
+       remote_db = remote_node.get_content_db(this_shard.shard_db_name)
+       all_good &= @our_node.replicate_to(this_shard_db, remote_node, remote_db)
 
-    end    
+       if !am_master && bool_to
+         # NOTE: How to build skynet, Note 2
+         #       We are doing some "gonzo" replication, here. Our master is
+         #       clearly down so we find the second best node; we push our 
+         #       changes to this node, and now also *replicate from* 
+         #       that node.
+         @our_node.replicate_from(this_shard_db, remote_node, remote_db)
+         @last_sync_seq = @this_shard_db.info['update_seq']
+         break
+       end
+    end
+    @last_sync_seq = @this_shard_db.info['update_seq'] if all_good    
   end
+
 end
 
 class ContentDoc < CouchRest::ExtendedDocument

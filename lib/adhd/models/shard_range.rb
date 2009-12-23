@@ -21,26 +21,13 @@ class ShardRangeDB
     # NOTE: randomize the order for load balancing here    
     
     management_nodes.each do |mng_node|      
-      remote_db = mng_node.get_shard_db
-      if !(mng_node.name == our_node.name)
-        begin 
-          puts "Sync ShardRange DB pull from #{mng_node.name}"
-          local_shard_db.replicate_from(remote_db)
-          # TODO: Manage conflicts here          
-          if our_node.is_management 
-            # Push any changes to other management nodes
-            puts "Sync ShardRange DB pushto #{mng_node.name}"
-            local_shard_db.replicate_to(remote_db)
-          else
-            break # sync with only one management server
-        end
-        rescue
-          puts "Could not connect to DB node #{mng_node.name}"
-          # TODO: change status or chose another management server
-          mng_node.status = "UNAVAILABLE"
-          mng_node.save
-        end     
-      end
+      remote_db = mng_node.get_shard_db      
+      bool_from = @our_node.replicate_from(local_shard_db, mng_node, remote_db)
+      if our_node.is_management 
+        # Push any changes to other management nodes
+        bool_to = @our_node.replicate_to(local_shard_db, mng_node, remote_db)
+      end      
+      break if bool_from && !our_node.is_management
     end
   end 
 
