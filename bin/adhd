@@ -6,7 +6,7 @@ require File.dirname(__FILE__) + '/../lib/adhd/reactor'
 require 'optparse'
 require 'ftools'
 require 'yaml'
-require 'socket'
+# require 'socket'
 
 def parse_config(file)
   @config = YAML.load_openstruct(File.read(file))

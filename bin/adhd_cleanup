@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+
+# Usage: adhd_cleanup nodename
+#        Deletes all databases associated with this adhd node
+
+require 'rubygems'
+require 'couchrest'
+require 'optparse'
+
+node_names = []
+delete_all = false
+db_url = ""
+
+opts = OptionParser.new do |opts|
+  opts.on("-u", "--url U", "node name") do |u|
+    puts "Database URL is #{db_url}"
+    # parse_config(n)
+    db_url = u
+  end
+
+
+  opts.on("-n", "--node N", "node name") do |n|
+    puts "Deleting databases of node #{n}"
+    # parse_config(n)
+    node_names << n
+  end
+  
+  opts.on("-d", "--delete", "Delete databases") do |n|
+    delete_all = true
+  end
+end
+
+opts.parse! ARGV
+
+if delete_all
+  puts "DELETE all databases in #{db_url}"
+else
+  puts "LIST all databases in #{db_url}"
+end
+
+puts node_names.join(' ,')
+
+
+# Find all databases we want
+server = CouchRest::Server.new(db_url)
+server.databases.each do |db_name|
+  node_names.each do |node_name|
+    if db_name.split('_')[0] == node_name
+      puts db_name   
+      if delete_all
+        db = server.database(db_name)
+        db.delete!
+      end 
+    end
+  end
+
+end

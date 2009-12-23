@@ -13,7 +13,7 @@ module Adhd
       @config = config
       @couch_server = CouchRest.new("http://#{config.node_url}:#{config.couchdb_server_port}")
       # @couch_server.default_database = "#{config.node_name}_node_db"
-      @couch_db = CouchRest::Database.new(@couch_server, "#{config.node_name}_node_db")
+      @couch_db = @couch_server.database!("#{config.node_name}_node_db") # CouchRest::Database.new(@couch_server, "#{config.node_name}_node_db")
       sync_with_buddy_node if config.buddy_server_url && config.buddy_server_db_name
       @our_node = initialize_node
       set_as_management_node_if_necessary
@@ -45,6 +45,7 @@ module Adhd
     def initialize_node
       puts "Initialize node #{@config.node_name}"
       Node.use_database @couch_db
+      puts "DB #{@couch_db}, node #{@config.node_name}"
       node_candidates = Node.by_name(:key => @config.node_name)
       # node_candidates = @couch_db.view("by_name", {:key => @config.node_name})
       node = node_candidates.pop
