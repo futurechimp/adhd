@@ -37,6 +37,18 @@ class NodeDB
       puts "Did not push to management"
     end
   end 
+
+  def available_node_list
+    # Returns all nodes marked as available
+    all_nodes = Node.by_name
+    return all_nodes.select {|node| node.status == "AVAILABLE"}
+  end
+
+  def head_management_node
+    management_nodes = Node.by_is_management.reverse
+    hmn = management_nodes.find {|node| node.status == "AVAILABLE"}
+    return hmn
+  end
     
 end
 
@@ -120,7 +132,6 @@ class Node  < CouchRest::ExtendedDocument
     end
 
   end
-
 
 end
 

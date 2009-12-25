@@ -68,7 +68,7 @@ module Adhd
     def set_as_management_node_if_necessary
       all_nodes = Node.by_name
       if all_nodes.length == 1
-        @our_node.is_management = 3
+        @our_node.is_management = 300
         @our_node.save
       end
     end
@@ -81,7 +81,7 @@ module Adhd
       conn_node = UpdateNotifierConnection.new(@config.node_url, 
                                         @config.couchdb_server_port, 
                                         @our_node.name + "_node_db", # NOTE: Sooo ugly!
-                                        Proc.new {|data| handle_node_update update})
+                                        Proc.new {|data| handle_node_update data})
       @conn_manager.add_connection(conn_node)
 
 
@@ -100,6 +100,18 @@ module Adhd
     
     def handle_node_update update
       # Added, removed or changed the status of a node
+      # If we are the admin, when a node joins we should allocate to it 
+      # some shards.
+      
+      # Only the head management node deals with node changes
+      return if @ndb.head_management_node && ! (@ndb.head_management_node.name == @our_node.name)
+      
+      # Given the shard_db and the node_db we should work out a new allocation
+      node_list = Node.by_name
+      shard_list = ShardRange.by_range_start
+      if node_list && shard_list
+        assign_nodes_to_shards(node_list, shard_list, 2)
+      end
     end
     
     
@@ -140,7 +152,7 @@ module Adhd
       connection.kill      
       content_shard.sync
       # TODO: test if the sync happened
-      shard_db.this_shard_db.delete
+      # content_shard.this_shard_db.delete!
       # TODO: run a sync with the current master to ensure that
       #       any changes have been pushed. The DELETE the database
       #       to save space    
@@ -194,3 +206,51 @@ module Adhd
   end
 end
 
+# -------- Management node logic -------------------
+
+require 'md5'
+
+def assign_nodes_to_shards(node_list, shard_range_list, replication_factor)
+  # This is an automatic way to allocate shards to nodes that just
+  # arrive in the networks, as well as re-allocate shards if nodes 
+  # become unavailable or leave the network. 
+  
+  # NOTE: How to build skynet (Part III)
+  #
+  #       The invarient we try to impost on the list of nodes part of a shard
+  #       is that there should be at least replication_factor available nodes
+  #       in it. At the same time we try to keep the list stable over nodes
+  #       joining and leaving. To achieve this we hash in sequence the name of 
+  #       each node with the name of the shard. We sort this list by hash, and 
+  #       choose the first n nodes such that at least replication_factor nodes
+  #       are available. Then we chose the first available node as the master
+  #       for that shard.
+
+  shard_range_list.each do |shard_range|
+    # Sort all nodes using consistent hashing
+    sorted_nodes = node_list.sort_by {|node| MD5.new("#{node.name}||#{shard_range.shard_db_name}").to_s}
+    avail = 0
+    master = nil
+    shard_node_list = []
+    sorted_nodes.each do |node|
+      shard_node_list << node
+      if node.status == "RUNNING"
+        master = node if !master # Chose the first available to be the master      
+        avail += 1
+        break if avail == replication_factor # We have enough available nodes        
+      end      
+    end
+    
+    # Now put this list in the shard_range and save it
+    # but only if there were changes
+    new_master = master.name if master
+    new_node_list = shard_node_list.map {|node| node.name}
+   
+    if !(new_master == shard_range.master_node) or !(new_node_list == shard_range.node_list)
+      shard_range.master_node = master.name if master
+      shard_range.node_list = shard_node_list.map {|node| node.name}
+      shard_range.save
+    end    
+  end
+
+end
