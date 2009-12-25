@@ -31,8 +31,10 @@ class NodeDB
       bool_from = @our_node.replicate_from(local_node_db, mng_node, remote_db)
       bool_to = @our_node.replicate_to(local_node_db, mng_node, remote_db)
       if bool_from && bool_to && !our_node.is_management
+         puts "Pushed to management"
          break
       end       
+      puts "Did not push to management"
     end
   end 
     
@@ -86,13 +88,13 @@ class Node  < CouchRest::ExtendedDocument
     # Do not try to contact unavailable nodes
     return false if other_node.status == "UNAVAILABLE"
     # No point replicating to ourselves    
-    return false if !(name == other_node.name)
+    return false if (name == other_node.name)
     
     begin  
       # Replicate to other node is possible
       local_db.replicate_to(remote_db)
       return true
-    rescue
+    rescue Exception => e
       # Other node turns out to be unavailable
       other_node.status = "UNAVAILABLE"
       other_node.save
@@ -104,13 +106,13 @@ class Node  < CouchRest::ExtendedDocument
     # Do not try to contact unavailable nodes
     return false if other_node.status == "UNAVAILABLE"
     # No point replicating to ourselves    
-    return false if !(name == other_node.name)
+    return false if (name == other_node.name)
     
     begin  
       # Replicate to other node is possible
       local_db.replicate_from(remote_db)
       return true
-    rescue
+    rescue Exception => e
       # Other node turns out to be unavailable
       other_node.status = "UNAVAILABLE"
       other_node.save

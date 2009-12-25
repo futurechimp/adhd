@@ -30,6 +30,12 @@ opts.parse! ARGV
 EM.run {
   # puts "Starting EventMachine reactor loop..."
   # EM.connect @config.node_url, @config.couchdb_server_port, Adhd::DbUpdateNotifier, @node_manager
-  @node_manager.run
+  timer = EventMachine::PeriodicTimer.new(5) do
+    puts "Sync Admin"
+    @node_manager.sync_admin
+    @node_manager.run
+  end
+
+  
 }
 

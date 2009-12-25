@@ -40,6 +40,7 @@ module  Adhd
       @db_name = db_name
       @conn_obj = conn_obj
       @buffer = ""
+      conn_obj.connection_inside = self # We tell the outer object who we are
     end
 
     # Makes a long-running request to a CouchDB instance's _changes URL.
@@ -71,9 +72,9 @@ module  Adhd
       end
     end
 
-    def close_connection
-      @conn_obj.close_handler(data)
-    end
+    #def close_connection
+    #  @conn_obj.close_handler(data)
+    #end
 
   end
 
@@ -91,15 +92,21 @@ module  Adhd
   # In practice we will have two types of connections: Replicate and Notify.
 
   class UpdateNotifierConnection
-    attr_accessor :db_name, :base_url
+    attr_accessor :db_name, :base_url, :connection_inside, :name
 
-    def initialize(node_url, couchdb_server_port, db_name, db_obj_for_sync)
+    def initialize(node_url, couchdb_server_port, db_name, sync_block)
       @node_url = node_url
       @couchdb_server_port = couchdb_server_port
       @db_name = db_name
-      @db_obj_for_sync = db_obj_for_sync
+      @sync_block = sync_block
       @status = "NOTRUNNING"
       @base_url = "http://#{@node_url}:#{@couchdb_server_port}"
+      @name = @base_url +"/"+ @db_name
+      @keep_alive = true      
+    end
+    
+    def kill
+      @keep_alive = false
     end
 
     def start
@@ -111,7 +118,8 @@ module  Adhd
     def event_handler data
       # puts "||#{data}||nn"
       puts "Run a crazy sync on db #{@db_name}"
-      @db_obj_for_sync.sync
+      #@db_obj_for_sync.sync
+      @sync_block.call(data)
     end
 
     def close_handler
@@ -127,7 +135,15 @@ module  Adhd
 
     def keep_alive?
       # Returns the truth value of the predicate
-      true
+      @keep_alive
+    end
+    
+    def keep_alive_or_kill!
+      if ! keep_alive?
+        # Schedule this connection for close
+        connection_inside.close_connection_after_writing
+        @status = "NOTRUNNING"
+      end
     end
 
     def should_start?
@@ -146,6 +162,10 @@ module  Adhd
     #  # Set the handler to be called then a connection is dead
     #  block(self) # Run the teardown handler
     #end
+    
+    def initialize
+    
+    end
 
     def should_start?
       !(@status == "RUNNING")
@@ -164,7 +184,14 @@ module  Adhd
     end
 
     def add_connection(conn)
-      # If it is happy to run, add it to the list and start it!
+      # Make sure we have no duplicates
+      @our_connections.each do |c|
+        if conn.name == c.name
+          return
+        end
+      end      
+    
+      # If it is happy to run, add it to the list and start it!      
       if conn.keep_alive?
           @our_connections << conn
           # Register the teardown handler for when the end comes...
@@ -185,6 +212,7 @@ module  Adhd
         # It seems we have died of natural causes
         # XXX: is it true that Ruby does not throw and exception for EOF?
         #      Otherwise we will never see this
+        conn.keep_alive_or_kill!
         @our_connections.delete(conn)
         conn.down_for_good(nil)
       end
@@ -196,8 +224,9 @@ module  Adhd
       # Run within EM.run loop
       puts "Connection bank runs all... (#{@our_connections.length} connections)"
       @our_connections.each do |c|
-        if c.is_closed?
-          # puts "Actually start #{c.db_name}..."
+        if c.is_closed? or !c.keep_alive?
+          puts "Actually rerun #{c.db_name}..."
+          
           rerun(c)
         end
       end

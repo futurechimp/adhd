@@ -89,14 +89,13 @@ class ShardRangeDB
   
   def get_content_shards
     # Return the content_shards of our node
-    content_shards = []
+    content_shards = {}
     ShardRange.by_node(:key => our_node.name).each do |s|
       
       # Build a content shard object
-      cs = ContentShard.new(nodes, s)
-      # add it to the list
-      content_shards << cs
-    end
+      content_shards[s.shard_db_name] = ContentShard.new(nodes, s)
+    end        
+    puts "Content shards #{content_shards.length}"
     content_shards
   end
   

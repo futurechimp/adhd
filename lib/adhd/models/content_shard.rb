@@ -33,7 +33,7 @@ class ContentShard
 
     # NOTE: This method needs serious refactoring
     # No need to update
-    return if @this_shard_db.info['update_seq'] == @last_sync_seq
+    return false if @this_shard_db.info['update_seq'] == @last_sync_seq
     
     # Are we the shard master?
     am_master = (our_node.name == this_shard.master_node)
@@ -44,7 +44,7 @@ class ContentShard
       bool_to = @our_node.replicate_to(this_shard_db, master_node, remote_db)
       if bool_to
         @last_sync_seq = @this_shard_db.info['update_seq']
-        return
+        return true
       end
     end
     
@@ -68,7 +68,12 @@ class ContentShard
          break
        end
     end
-    @last_sync_seq = @this_shard_db.info['update_seq'] if all_good    
+    if all_good
+      @last_sync_seq = @this_shard_db.info['update_seq']
+      return true
+    else     
+      return false
+    end
   end
 
 end
