@@ -103,7 +103,7 @@ class ShardRangeDB
   
   def write_doc_directly(content_doc)
     # Write a document directly to a nodes content repository
-    success = false
+    success = {:ok => false , :reason => "No available node found"}
     doc_shard = get_shard(content_doc.internal_id).first
     doc_shard.get_nodes.each do |node|
       # Try to write the doc to this node
@@ -112,12 +112,12 @@ class ShardRangeDB
         remote_ndb = NodeDB.new(remote_node)
         remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
         remote_content_shard.this_shard_db.save_doc(content_doc)
-        success = {:doc => content_doc, :db => remote_content_shard.this_shard_db}
+        success = {:ok => true, :doc => content_doc, :db => remote_content_shard.this_shard_db}
         break
       rescue RestClient::RequestFailed => rf
         if rf.http_code == 409
           puts "Document already there"
-          return false
+          return {:ok => false , :reason => "Document already in database"}
         end
       rescue Exception =>e
         puts "Could not put doc in node #{node} because of #{rf}"
@@ -144,7 +144,7 @@ class ShardRangeDB
         
         docx = ContentDoc.by_internal_id(:key => internal_id, :database => remote_content_shard.this_shard_db)
         if docx.length > 0
-          return {:doc => docx.first, :db => remote_content_shard.this_shard_db }
+          return {:ok => true, :doc => docx.first, :db => remote_content_shard.this_shard_db }
         end
       rescue
         puts "Could not put doc in node #{node.name}"
@@ -153,7 +153,7 @@ class ShardRangeDB
         remote_node.save      
       end
     end    
-  return {}
+  return {:ok => false }
   end
   
 end

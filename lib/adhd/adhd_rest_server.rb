@@ -1,5 +1,7 @@
 require 'eventmachine'
 require 'uri'
+require 'net/http'
+require 'webrick'  
 
  module ProxyToServer
   # This implements the connection that proxies an incoming file to to the 
@@ -58,29 +60,24 @@ require 'uri'
        @buffer += data
               
        if data =~ /\r\n\r\n/
+
         # Detected end of headers
         header_data = @buffer[0...($~.begin(0))]
-        puts header_data
-        
-        @buffer = @buffer[($~.end(0))..-1]
-        
-        # Simple parsing of the headers
-        headers = header_data.split("\r\n")
-        @request_line = headers[0].split(" ")
-        headers = headers[1..-1]
-        @parsed_headers = {}
-        
-        # puts "Headers: #{headers.join("**\n**")}"
-        headers.each do |h|
-          # puts "Parse '#{h}' as [#{kv_list.join(", ")}]"
-          kv_list = h.split(": ", 2)
-          @parsed_headers[kv_list[0]] = kv_list[1]
+       
+        # Try the webrick parser
+        @req = WEBrick::HTTPRequest.new(WEBrick::Config::HTTP)
+
+        StringIO.open(header_data, 'rb') do |socket|
+          @req.parse(socket)
         end
         
+        # The rest of the incomming connection        
+        @buffer = @buffer[($~.end(0))..-1]
+        
         # Compute the ID of the sought resource
-        if @request_line[1] =~ /\/adhd\/(.*)/
-          @parsed_headers["Filename"] = $1
-          @parsed_headers["ID"] = MD5.new($1).to_s
+        if @req.path =~ /\/adhd\/(.*)/
+          @req.header["Filename"] = $1
+          @req.header["ID"] = MD5.new($1).to_s
         else
           # Throw an error          
         end
@@ -106,31 +103,39 @@ require 'uri'
         #       Right now we are blocking and it sucks.  
               
         # Now get or write the document associated with this file
-        if @request_line[0] == "GET"
-          puts "GET the document"
-          @our_doc = @node_manager.srdb.get_doc_directly(@parsed_headers["ID"])
+        if @req.request_method == "GET"
+          
+          @our_doc = @node_manager.srdb.get_doc_directly(@req.header["ID"])
           
           # TODO: handle erros if file does not exist
-          @status == :get
-          handle_get          
+          if @our_doc[:ok]
+            @status == :get
+            handle_get
+          else
+            send_data "Problem"
+          end          
         end
         
-        if @request_line[0] == "PUT"
+        if @req.request_method == "PUT"
           # Define a Doc with the data so far
           @our_doc = ContentDoc.new
           
-          @our_doc._id = @parsed_headers["ID"]
-          @our_doc.internal_id = @parsed_headers["ID"]
-          @our_doc.size_bytes = @parsed_headers["Content-Length"]
-          @our_doc.filename = @parsed_headers["Filename"]
-          @our_doc.mime_type = @parsed_headers["Content-Type"]
+          @our_doc._id = @req.header["ID"]
+          @our_doc.internal_id = @req.header["ID"]
+          @our_doc.size_bytes = @req.content_length
+          @our_doc.filename = @req.header["Filename"]
+          @our_doc.mime_type = @req.content_type
           
           # Write to the right node
           @our_doc = @node_manager.srdb.write_doc_directly(@our_doc)
           
           # TODO: if an error is returned here, we cannot execute the query
-          @status = :put
-          handle_put
+          if @our_doc[:ok]
+            @status = :put
+            handle_put
+          else          
+            send_data "Problem"
+          end
         end
       
         # Now send the reply as an HTTP1.0 reponse
@@ -145,7 +150,7 @@ require 'uri'
         # ** a blank line *
         # <HTML> ...
       
-      resume
+      
       
       # response = @our_doc.to_s
       # 
@@ -168,6 +173,7 @@ require 'uri'
    end
 
   def handle_get  
+    resume
     # We need to connect to the right server and build a header
     server_uri = URI.parse(@our_doc[:db].server.uri)
     server_addr = server_uri.host
@@ -195,6 +201,8 @@ require 'uri'
   
   
   def handle_put
+    resume
+    
     # We need to connect to the right server and build a header
     server_uri = URI.parse(@our_doc[:db].server.uri)
     server_addr = server_uri.host
