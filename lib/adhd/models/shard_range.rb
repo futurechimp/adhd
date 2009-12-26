@@ -37,7 +37,7 @@ class ShardRangeDB
     ("0".."9").each do |c|
       characters << c
     end
-    ("a".."z").each do |c|
+    ("a".."f").each do |c|
       characters << c
     end
     
@@ -45,7 +45,9 @@ class ShardRangeDB
     all_keys = []
     characters.each do |c1|
       characters.each do |c2|
-        all_keys << (c1+c2)
+        characters.each do |c3|
+          all_keys << (c1+c2+c3)
+        end
       end
     end
     
@@ -59,7 +61,7 @@ class ShardRangeDB
     end
     
     shard_ends = shard_starts.clone
-    shard_ends << ("z" * 100)
+    shard_ends << ("z" * 3)
     shard_ends.delete_at(0)
     
     # Finally build them!

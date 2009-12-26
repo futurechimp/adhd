@@ -41,12 +41,12 @@ class NodeDB
   def available_node_list
     # Returns all nodes marked as available
     all_nodes = Node.by_name
-    return all_nodes.select {|node| node.status == "AVAILABLE"}
+    return all_nodes.select {|node| node.status == "RUNNING"}
   end
 
   def head_management_node
     management_nodes = Node.by_is_management.reverse
-    hmn = management_nodes.find {|node| node.status == "AVAILABLE"}
+    hmn = management_nodes.find {|node| node.status == "RUNNING"}
     return hmn
   end
     

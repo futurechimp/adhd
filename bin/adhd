@@ -27,6 +27,23 @@ opts.parse! ARGV
 
 @node_manager = Adhd::NodeManager.new(@config)
 
+# Lets rely on the thin server here...
+
+require 'thin'
+
+class SimpleAdapter
+  def call(env)
+    body = ["hello!"]
+    [
+      200,
+      { 'Content-Type' => 'text/plain' },
+      body
+    ]
+  end
+end
+
+# Start the Thin server within the reactor loop
+
 EM.run {
   # puts "Starting EventMachine reactor loop..."
   # EM.connect @config.node_url, @config.couchdb_server_port, Adhd::DbUpdateNotifier, @node_manager
@@ -35,6 +52,18 @@ EM.run {
     @node_manager.sync_admin
     @node_manager.run
   end
+  
+  # Start our web server 
+  Thin::Server.start(@config.node_url, @config.couchdb_server_port + 1) do
+    use Rack::CommonLogger
+    map '/test' do
+      run SimpleAdapter.new
+    end
+    map '/files' do
+      run Rack::File.new('.')
+    end
+  end
+  
 
   
 }
