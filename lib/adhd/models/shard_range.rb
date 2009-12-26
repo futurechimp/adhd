@@ -103,6 +103,7 @@ class ShardRangeDB
   
   def write_doc_directly(content_doc)
     # Write a document directly to a nodes content repository
+    success = false
     doc_shard = get_shard(content_doc.internal_id).first
     doc_shard.get_nodes.each do |node|
       # Try to write the doc to this node
@@ -111,16 +112,21 @@ class ShardRangeDB
         remote_ndb = NodeDB.new(remote_node)
         remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
         remote_content_shard.this_shard_db.save_doc(content_doc)
+        success = {:doc => content_doc, :db => remote_content_shard.this_shard_db}
         break
-      rescue
-        puts "Could not put doc in node #{node.name}"
+      rescue RestClient::RequestFailed => rf
+        if rf.http_code == 409
+          puts "Document already there"
+          return false
+        end
+      rescue Exception =>e
+        puts "Could not put doc in node #{node} because of #{rf}"
         # TODO: change status or chose another management server
-        node.status = "UNAVAILABLE"
-        node.save
-      
+        remote_node.status = "UNAVAILABLE"
+        remote_node.save
       end
     end
-    
+    return success
   end
   
   def get_doc_directly(internal_id)
@@ -138,16 +144,16 @@ class ShardRangeDB
         
         docx = ContentDoc.by_internal_id(:key => internal_id, :database => remote_content_shard.this_shard_db)
         if docx.length > 0
-          break
+          return {:doc => docx.first, :db => remote_content_shard.this_shard_db }
         end
       rescue
         puts "Could not put doc in node #{node.name}"
         # TODO: change status or chose another management server
-        node.status = "UNAVAILABLE"
-        node.save      
+        remote_node.status = "UNAVAILABLE"
+        remote_node.save      
       end
     end    
-  docx
+  return {}
   end
   
 end
@@ -186,10 +192,10 @@ class ShardRange < CouchRest::ExtendedDocument
 
   def get_nodes
     # Return all nodes, with the master being first
-    all_nodes = node_list
+    all_nodes = node_list.clone
     all_nodes.delete(master_node)
     all_nodes = [master_node] + all_nodes
-    allnodes
+    all_nodes
   end
 
 end

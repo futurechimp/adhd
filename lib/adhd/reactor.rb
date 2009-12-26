@@ -222,7 +222,7 @@ module  Adhd
     def run_all
       # Go through all connections and run them all
       # Run within EM.run loop
-      puts "Connection bank runs all... (#{@our_connections.length} connections)"
+      # puts "Connection bank runs all... (#{@our_connections.length} connections)"
       @our_connections.each do |c|
         if c.is_closed? or !c.keep_alive?
           puts "Actually rerun #{c.db_name}..."

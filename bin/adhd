@@ -2,6 +2,7 @@
 require File.dirname(__FILE__) + '/../lib/ext/hash_to_openstruct'
 require File.dirname(__FILE__) + '/../lib/adhd/node_manager'
 require File.dirname(__FILE__) + '/../lib/adhd/reactor'
+require File.dirname(__FILE__) + '/../lib/adhd/adhd_rest_server'
 
 require 'optparse'
 require 'ftools'
@@ -34,10 +35,14 @@ EM.run {
   # puts "Starting EventMachine reactor loop..."
   # EM.connect @config.node_url, @config.couchdb_server_port, Adhd::DbUpdateNotifier, @node_manager
   timer = EventMachine::PeriodicTimer.new(5) do
-    puts "Sync Admin"
+    # puts "Sync Admin"
     @node_manager.sync_admin
     @node_manager.run
   end
+  
+  # Start the server
+  EventMachine::start_server @config.node_url, @config.couchdb_server_port + 1, AdhdRESTServer, @node_manager
+
   
 }
 

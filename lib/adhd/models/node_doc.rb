@@ -31,10 +31,10 @@ class NodeDB
       bool_from = @our_node.replicate_from(local_node_db, mng_node, remote_db)
       bool_to = @our_node.replicate_to(local_node_db, mng_node, remote_db)
       if bool_from && bool_to && !our_node.is_management
-         puts "Pushed to management"
+         #puts "Pushed to management"
          break
       end       
-      puts "Did not push to management"
+      #puts "Did not push to management"
     end
   end 
 
@@ -57,6 +57,8 @@ class Node  < CouchRest::ExtendedDocument
   #NODESERVER.default_database = "#{ARGV[0]}_node_db"
 
   #use_database NODESERVER.default_database
+
+  unique_id :name
 
   property :name
   property :url
