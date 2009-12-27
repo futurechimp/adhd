@@ -8,6 +8,8 @@ require File.dirname(__FILE__) + '/models/content_shard'
 
 module Adhd
   class NodeManager
+  
+    attr_accessor :our_node, :ndb, :srdb
 
     def initialize(config)
       @config = config
