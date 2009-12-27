@@ -1,9 +1,24 @@
 = adhd
 
-Description goes here.
+Adhd is an asynchronous, distributed hard drive.  Actually we're not sure if it's really asynchronous or even what asynchronicity would mean in the context of a hard drive, but it is definitely distributed.  Adhd is essentially a management layer (written using Ruby and eventmachine) which controls clusters of CouchDB databases to replicate files across disparate machines.  Unlike most clustering storage solutions, adhd assumes that machines in the cluster may have different amounts of bandwidth available and is designed to work both inside and outside the data centre.
+
+== Installation
+
+Don't use this software yet.  It is experimental and may eat your mother.
+
+Having said that, <pre>sudo gem install adhd</pre> may do the job.
+
+== Fictional use cases (no one has ever used this software in real life)
+
+Wikipedia: photos of Cheryl Cole and Robbie Williams are unfortunately wildly popular at present and will be requested often.  Photos of the millions of singers with more talent and less marketing budgets will not be requested very often, but it's still good if they are in the cluster.  If by some stroke of good luck Kevin Quain suddenly gets the recognition he deserves, his photo will be shifted from the "dial-up" node class to something with more stomp.
+
+Archive.org: those sex-ed videos and Bert the turtle from the Prelinger Archive are awesome and everybody wants to watch them, so they should be on beefy video-storage nodes with high bandwidth.  Documentaries on the yellow-bellied sapsucker may be requested only once in a while.
+
+BBC News: material going up on the site right now will need a lot of bandwidth, but by next week most of this media will be out of the news cycle and can be consigned to a set of servers with much less bandwidth.  By next year, it is unlikely that this media will be viewed even a few times a day, so it could be smart to trade storage costs for speed and put old media on cheaper, lower-bandwidth boxes with huge hard drives.
+
 
 == Note on Patches/Pull Requests
- 
+
 * Fork the project.
 * Make your feature addition or bug fix.
 * Add tests for it. This is important so I don't break it in a
@@ -16,3 +31,4 @@ Description goes here.
 == Copyright
 
 Copyright (c) 2009 dave@netbook. See LICENSE for details.
+

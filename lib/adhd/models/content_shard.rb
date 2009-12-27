@@ -1,16 +1,16 @@
 
 
 class ContentShard
-  attr_accessor :nodes, :this_shard, :our_node, :this_shard_db  
+  attr_accessor :nodes, :this_shard, :our_node, :this_shard_db
 
   def initialize(nodesv, this_shardv)
     @nodes = nodesv
     @this_shard = this_shardv
-    
+
     # Work out the rest
     @our_node = nodesv.our_node
     @this_shard_db = nodesv.our_node.get_content_db(this_shardv.shard_db_name)
-    
+
     @last_sync_seq = 0 # @this_shard_db.info['update_seq']
   end
 
@@ -19,22 +19,22 @@ class ContentShard
   end
 
   def write_doc(content_doc)
-    # Write a content document to this shard    
+    # Write a content document to this shard
     # Make sure it is in this shard
     if in_shard? content_doc.internal_id
       this_shard_db.save_doc(content_doc)
     end
   end
-  
+
   def sync
     # A Shard only pushes with the master of the shard
     # or the node with the highest is_storage value alive
-    # Shard masters ensure changes are pushed to all    
+    # Shard masters ensure changes are pushed to all
 
     # NOTE: This method needs serious refactoring
     # No need to update
     return false if @this_shard_db.info['update_seq'] == @last_sync_seq
-    
+
     # Are we the shard master?
     am_master = (our_node.name == this_shard.master_node)
 
@@ -47,8 +47,8 @@ class ContentShard
         return true
       end
     end
-    
-    # Either we are the master or the master has failed -- we replicate with 
+
+    # Either we are the master or the master has failed -- we replicate with
     # all nodes or the first available aside us and master
     all_good = true
     this_shard.node_list.each do |node_name|
@@ -60,8 +60,8 @@ class ContentShard
        if !am_master && bool_to
          # NOTE: How to build skynet, Note 2
          #       We are doing some "gonzo" replication, here. Our master is
-         #       clearly down so we find the second best node; we push our 
-         #       changes to this node, and now also *replicate from* 
+         #       clearly down so we find the second best node; we push our
+         #       changes to this node, and now also *replicate from*
          #       that node.
          @our_node.replicate_from(this_shard_db, remote_node, remote_db)
          @last_sync_seq = @this_shard_db.info['update_seq']
@@ -71,7 +71,7 @@ class ContentShard
     if all_good
       @last_sync_seq = @this_shard_db.info['update_seq']
       return true
-    else     
+    else
       return false
     end
   end
@@ -79,19 +79,19 @@ class ContentShard
 end
 
 class ContentDoc < CouchRest::ExtendedDocument
-  # NOTE: NO DEFAULT DATABASE IN THE OBJECT -- WE WILL BE STORING A LOT OF 
+  # NOTE: NO DEFAULT DATABASE IN THE OBJECT -- WE WILL BE STORING A LOT OF
   # DATABASES OF THIS TYPE.
 
-  
+
   property :_id
   property :internal_id
   property :size_bytes
   property :filename
   property :mime_type
-  
+
   view_by :internal_id
-  
+
   # A special attachment "File" is expected to exist
 
+end
 
-end 
