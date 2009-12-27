@@ -9,11 +9,10 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["dave.hrycyszyn@headlondon.com"]
-  s.date = %q{2009-12-19}
-  s.default_executable = %q{adhd}
+  s.date = %q{2009-12-27}
   s.description = %q{More to say when something works! Do not bother installing this! }
   s.email = %q{dave.hrycyszyn@headlondon.com}
-  s.executables = ["adhd"]
+  s.executables = ["adhd", "adhd_cleanup"]
   s.extra_rdoc_files = [
     "LICENSE",
      "README.rdoc"
@@ -27,11 +26,15 @@ Gem::Specification.new do |s|
      "VERSION",
      "adhd.gemspec",
      "bin/adhd",
+     "bin/adhd_cleanup",
      "doc/adhd.xmi",
-     "lib/adhd.rb",
+     "lib/adhd/adhd_rest_server.rb",
      "lib/adhd/config.yml",
-     "lib/adhd/models.rb",
-     "lib/adhd/node.rb",
+     "lib/adhd/models/content_doc.rb",
+     "lib/adhd/models/content_shard.rb",
+     "lib/adhd/models/node_doc.rb",
+     "lib/adhd/models/shard_range.rb",
+     "lib/adhd/node_manager.rb",
      "lib/adhd/reactor.rb",
      "lib/ext/hash_to_openstruct.rb",
      "lib/public/images/img01.jpg",
@@ -53,7 +56,6 @@ Gem::Specification.new do |s|
      "lib/public/style.css",
      "lib/views/index.erb",
      "lib/views/layout.erb",
-     "models.rb",
      "test/helper.rb",
      "test/test_adhd.rb"
   ]
