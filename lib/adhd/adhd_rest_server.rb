@@ -65,9 +65,13 @@ require 'webrick'
         # Detected end of headers
         header_data = @buffer[0...($~.begin(0))]
        
+       @web_config = WEBrick::Config::HTTP.clone
+       @web_config[:HTTPVersion] = WEBrick::HTTPVersion.new("1.0")
+       
         # Try the webrick parser
-        @req = WEBrick::HTTPRequest.new(WEBrick::Config::HTTP)
-        @res = WEBrick::HTTPResponse.new(WEBrick::Config::HTTP)
+        @req = WEBrick::HTTPRequest.new(@web_config)
+        @res = WEBrick::HTTPResponse.new(@web_config)
+        
         
         puts @res.to_s
 
