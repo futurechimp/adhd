@@ -8,6 +8,50 @@ Don't use this software yet.  It is experimental and may eat your mother.
 
 Having said that, <pre>sudo gem install adhd</pre> may do the job.
 
+== How it works
+
+=== External API
+
+The user issues an HTTP PUT request to a ADHD url.  This request can go to any machine in the ADHD cluster.  A file is attached to the body of the request, and ADHD stores the file on a number of different servers.  At a later time, the user can issue a GET request to the same url and get back their file.
+
+
+=== Under the Hood
+
+==== Overview
+
+Multiple server nodes are part of an ADHD network.  Each node has a full copy of two CouchDB databases: the node management database, and the shard range database.
+
+The node management database keeps a record of all existing nodes, their location (IP), and current status.  This database is replicated across all nodes in the cluster;  any node is in theory capable of becoming a management node if the current management nodes become unavailable.
+
+The shard range database is also replicated everywhere.  It allows any node to find out which storage nodes are responsible for holding a particular piece of content.  Management nodes are in charge of maintaining the shard database and pushing changes to non-management nodes.
+
+Storage nodes hold one or more shards in addition to the management and shard range databases.  These shards contain the content and some metadata.  A shard consists of a CouchDB database which holds Couch documents - one attached file per document.
+
+==== PUT requests
+
+A PUT request reaches any ADHD node.  The first line of the request is parsed, and the ADHD node figures out the name, MIME type and content length of the file based on the incoming HTTP request headers.  Based on the MD5 hash of the filename, we extract a 20-byte internal ID string for the file and use this string to figure out which shard range the file will be assigned to.
+
+Once we have a shard range, we ask the shard range database which node(s) are in charge of storage for the given shard and are currently available. One of these nodes is chosen (starting with a master node and falling back to other nodes as necessary).  The file metadata is written as a CouchDB document to the chosen node, followed by the file as an attachment.
+
+==== GET requests
+
+The GET request is basically the same as the PUT request, except that the file is retrieved from the CouchDB shard instead of being created on a shard.
+
+==== Replication
+
+Replication happens differently for different databases.  The node management database and the shard range database are periodically synced to and from the management nodes.  The content shards are replicated when they get updated (i.e. when a file is added to a node which is responsible for a given shard, the file will be replicated to all other nodes which are responsible for the same shard).
+
+== Rationale
+
+We can have multiple redundant nodes storing the same files, getting rid of the need for backups.  Not every node needs to store every file, so we can scale up storage capacity by adding more nodes. The design also provides load balancing as it means that we can serve files from multiple nodes.
+
+Because all admin information is shared by every node, the unavailability of any node does not jeopardize the operation of the system.  As soon as a node becomes unavailable, any other node can perform its functions (although we will lose storage capacity throughout the cluster if we lose multiple large storage nodes).
+
+=== Some vapourware objectives
+
+The design also allows for different capabilities in storage nodes.  Shards can be assigned based on specific properties (available bandwidth, available processing power, etc) so that we can store files in the most efficient possible way.  It might be desirable, for example, to put all video files on machines with fast processors for doing video encoding, whereas audio and photos wouldn't need any post-processing and could go somewhere else.  Or we could store new and popular content in shard ranges which are on fast servers with high throughput, while putting less popular content on servers with less bandwidth (and lower storage costs).  Ideally we would like to get to a point where low-demand files can be stored on relatively low-bandwidth home or office network connections and still be available in the cluster.
+
+
 == Fictional use cases (no one has ever used this software in real life)
 
 Wikipedia: photos of Cheryl Cole and Robbie Williams are unfortunately wildly popular at present and will be requested often.  Photos of the millions of singers with more talent and less marketing budgets will not be requested very often, but it's still good if they are in the cluster.  If by some stroke of good luck Kevin Quain suddenly gets the recognition he deserves, his photo will be shifted from the "dial-up" node class to something with more stomp.
