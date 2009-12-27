@@ -1,7 +1,6 @@
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
-#require File.dirname(__FILE__) + '/../models'
 
 class TestAdhd <  Test::Unit::TestCase
 
