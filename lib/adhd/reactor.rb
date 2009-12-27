@@ -54,10 +54,10 @@ module  Adhd
 
     # Shoots update notifications from CouchDB to the @conn.
     #
-    def receive_data data      
+    def receive_data data
       # puts "received_data: #{data}"
       # puts "||#{data}||length=#{data.length}||#{data.dump}||"
-      
+
       @buffer += data # Add the data to the current buffer
       updates = []
       if @buffer =~ /(\{[^\n]+\}\n)/
@@ -65,7 +65,7 @@ module  Adhd
         # Trim the buffer to $_.end(0)
         @buffer = @buffer[$~.end(0)..-1]
       end
-      
+
       # Regexp for JSON updates is /\{[\n]\}+/
       updates.each do |json_event|
         @conn_obj.event_handler(json_event) unless data == "\n"
@@ -88,9 +88,9 @@ module  Adhd
   #       predicate is false we can simply close the connection. For example upon
   #       being given control of a different content shard, or a different master
   #       for the shard.
-
+  #
   # In practice we will have two types of connections: Replicate and Notify.
-
+  #
   class UpdateNotifierConnection
     attr_accessor :db_name, :base_url, :connection_inside, :name
 
@@ -102,9 +102,9 @@ module  Adhd
       @status = "NOTRUNNING"
       @base_url = "http://#{@node_url}:#{@couchdb_server_port}"
       @name = @base_url +"/"+ @db_name
-      @keep_alive = true      
+      @keep_alive = true
     end
-    
+
     def kill
       @keep_alive = false
     end
@@ -133,11 +133,12 @@ module  Adhd
       end
     end
 
+    # Returns the truth value of the predicate
+    #
     def keep_alive?
-      # Returns the truth value of the predicate
       @keep_alive
     end
-    
+
     def keep_alive_or_kill!
       if ! keep_alive?
         # Schedule this connection for close
@@ -154,18 +155,9 @@ module  Adhd
       (@status == "NOTRUNNING")
     end
 
-
   end
 
   class Connection
-    #def on_teardown(&block)
-    #  # Set the handler to be called then a connection is dead
-    #  block(self) # Run the teardown handler
-    #end
-    
-    def initialize
-    
-    end
 
     def should_start?
       !(@status == "RUNNING")
@@ -177,21 +169,25 @@ module  Adhd
 
   end
 
+  # Manage a bunch of connections for us
+  #
   class ConnectionBank
-    # Manage a bunch of connections for us
+
     def initialize
       @our_connections = []
     end
 
+    # Add a connection to the ConnectionBank, making sure we have no duplicates.
+    #
     def add_connection(conn)
-      # Make sure we have no duplicates
       @our_connections.each do |c|
         if conn.name == c.name
           return
         end
-      end      
-    
-      # If it is happy to run, add it to the list and start it!      
+      end
+
+      # If it is happy to run, add it to the list and start it!
+      #
       if conn.keep_alive?
           @our_connections << conn
           # Register the teardown handler for when the end comes...
@@ -199,9 +195,10 @@ module  Adhd
       end
     end
 
+    # When a connection is down, we check to see if it wants to be kept
+    # alive, and restart it otherwise we remove it from the list.
+    #
     def rerun(conn)
-      # When a connection is down, we check to see if it wants to be kept
-      # alive, and restart it otherwise we remove it from the list.
       if conn.keep_alive?
         begin
           conn.start
@@ -219,14 +216,15 @@ module  Adhd
 
     end
 
+    # Go through all connections and run them all
+    # Run within EM.run loop
+    #
     def run_all
-      # Go through all connections and run them all
-      # Run within EM.run loop
       # puts "Connection bank runs all... (#{@our_connections.length} connections)"
       @our_connections.each do |c|
         if c.is_closed? or !c.keep_alive?
           puts "Actually rerun #{c.db_name}..."
-          
+
           rerun(c)
         end
       end
