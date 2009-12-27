@@ -110,26 +110,24 @@ module  Adhd
     end
 
     def start
-      puts "Register the connection for #{@db_name}"
+      puts "Registering the connection for: #{@db_name}"
       EM.connect @node_url, @couchdb_server_port, Adhd::DbUpdateNotifier, @db_name, self
       @status = "RUNNING"
     end
 
     def event_handler data
-      # puts "||#{data}||nn"
-      puts "Run a crazy sync on db #{@db_name}"
-      #@db_obj_for_sync.sync
+      puts "Run a crazy sync on db: #{@db_name}"
       @sync_block.call(data)
     end
 
     def close_handler
-      puts "Closed abnormally #{reason}"
+      puts "Closed abnormally: #{reason}"
       @status = "NOTRUNNING"
     end
 
     def down_for_good(reason)
       if reason
-        puts "Closed for good #{reason}"
+        puts "Closed for good: #{reason}"
       end
     end
 
@@ -196,7 +194,7 @@ module  Adhd
     end
 
     # When a connection is down, we check to see if it wants to be kept
-    # alive, and restart it otherwise we remove it from the list.
+    # alive, and restart it; otherwise we remove it from the list.
     #
     def rerun(conn)
       if conn.keep_alive?
@@ -207,7 +205,7 @@ module  Adhd
         end
       else
         # It seems we have died of natural causes
-        # XXX: is it true that Ruby does not throw and exception for EOF?
+        # XXX: is it true that Ruby does not throw an exception for EOF?
         #      Otherwise we will never see this
         conn.keep_alive_or_kill!
         @our_connections.delete(conn)
@@ -220,11 +218,9 @@ module  Adhd
     # Run within EM.run loop
     #
     def run_all
-      # puts "Connection bank runs all... (#{@our_connections.length} connections)"
       @our_connections.each do |c|
         if c.is_closed? or !c.keep_alive?
           puts "Actually rerun #{c.db_name}..."
-
           rerun(c)
         end
       end

@@ -78,7 +78,7 @@ module Adhd
     def build_node_admin_databases
       @conn_manager = ConnectionBank.new
 
-      # Lets build a nice NodeDB
+      # Let's build a nice NodeDB
       @ndb = NodeDB.new(@our_node)
       conn_node = UpdateNotifierConnection.new(@config.node_url,
                                         @config.couchdb_server_port,
@@ -100,13 +100,14 @@ module Adhd
 
     end
 
-    # Something added, removed or changed the status of a node, so this method
-    # gets called.
+    # A node changed status (became available, or became unavailable).
     #
     # If we are the admin, when a node joins we should allocate some shards to
     # it.
     #
-    # Only the head management node deals with node changes
+    # Only the head management node deals with node changes.
+    #
+    #  XXXX doc question: what does it mean to be 'the admin'?
     #
     def handle_node_update update
       return if @ndb.head_management_node && ! (@ndb.head_management_node.name == @our_node.name)
@@ -120,8 +121,9 @@ module Adhd
     end
 
 
+    # Build content shard databases.
+    #
     def build_node_content_databases
-      # Get all content shard databases
       # NOTE: we will have to refresh those then we are re-assigned shards
       @contentdbs = {} if !@contentdbs
       current_shards = @srdb.get_content_shards
@@ -220,10 +222,10 @@ require 'md5'
 # This is an automatic way to allocate shards to nodes that just
 # arrive in the networks, as well as re-allocate shards if nodes
 # become unavailable or leave the network.
-
+#
 # NOTE: How to build skynet (Part III)
 #
-#       The invarient we try to impost on the list of nodes part of a shard
+#       The invariant we try to impose on the list of nodes part of a shard
 #       is that there should be at least replication_factor available nodes
 #       in it. At the same time we try to keep the list stable over nodes
 #       joining and leaving. To achieve this we hash in sequence the name of
