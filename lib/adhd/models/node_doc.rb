@@ -99,24 +99,16 @@ class Node  < CouchRest::ExtendedDocument
   # databases, and only do a replication after some time lapses.
 
   def replicate_to(local_db, other_node, remote_db)
-    # Do not try to contact unavailable nodes
-    return false if other_node.status == "UNAVAILABLE"
-    # No point replicating to ourselves
-    return false if (name == other_node.name)
-
-    begin
-      # Replicate to other node is possible
-      local_db.replicate_to(remote_db)
-      return true
-    rescue Exception => e
-      # Other node turns out to be unavailable
-      other_node.status = "UNAVAILABLE"
-      other_node.save
-      return false
-    end
+    replicate_to_or_from(local_db, other_node, remote_db, true)
   end
 
   def replicate_from(local_db, other_node, remote_db)
+    replicate_to_or_from(local_db, other_node, remote_db, false)
+  end
+
+  private
+
+  def replicate_to_or_from(local_db, other_node, remote_db, to = true)
     # Do not try to contact unavailable nodes
     return false if other_node.status == "UNAVAILABLE"
     # No point replicating to ourselves
@@ -124,7 +116,11 @@ class Node  < CouchRest::ExtendedDocument
 
     begin
       # Replicate to other node is possible
-      local_db.replicate_from(remote_db)
+      if to
+        local_db.replicate_to(remote_db)
+      else
+        local_db.replicate_from(remote_db)
+      end
       return true
     rescue Exception => e
       # Other node turns out to be unavailable
@@ -132,8 +128,9 @@ class Node  < CouchRest::ExtendedDocument
       other_node.save
       return false
     end
-
+  
   end
+
 
 end
 

@@ -6,7 +6,6 @@ require File.dirname(__FILE__) + '/../../lib/adhd/models/node_doc'
 
 class TestAdhd <  Test::Unit::TestCase
 
-
   context "The Node model" do
     setup do
       @node = Node.new
@@ -40,6 +39,12 @@ class TestAdhd <  Test::Unit::TestCase
       assert @node.respond_to? "created_at"
       assert @node.respond_to? "updated_at"
     end
+    
+    should "be able to replicate to and from other DBs" do
+      assert @node.respond_to? "replicate_to"
+      assert @node.respond_to? "replicate_from"
+    end
+     
 
   end
 
