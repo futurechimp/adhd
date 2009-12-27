@@ -1,12 +1,16 @@
 = adhd
 
-Adhd is an asynchronous, distributed hard drive.  Actually we're not sure if it's really asynchronous or even what asynchronicity would mean in the context of a hard drive, but it is definitely distributed.  Adhd is essentially a management layer (written using Ruby and eventmachine) which controls clusters of CouchDB databases to replicate files across disparate machines.  Unlike most clustering storage solutions, adhd assumes that machines in the cluster may have different amounts of bandwidth available and is designed to work both inside and outside the data centre.
+Adhd is an asynchronous, distributed hard drive.  Actually we're not sure if it's really asynchronous or even what asynchronicity would mean in the context of a hard drive, but it is definitely distributed.  Adhd is essentially a management layer (written using Ruby and eventmachine) which controls clusters of CouchDB databases to replicate files across disparate machines.  Unlike most clustering storage solutions, adhd assumes that machines in the cluster may have different capabilities and is designed to work both inside and outside the data centre.
 
 == Installation
 
 Don't use this software yet.  It is experimental and may eat your mother.
 
-Having said that, <pre>sudo gem install adhd</pre> may do the job.
+Having said that,
+
+ sudo gem install adhd
+
+may do the job.
 
 == How it works
 
@@ -67,9 +71,9 @@ BBC News: material going up on the site right now will need a lot of bandwidth, 
 * Make your feature addition or bug fix.
 * Add tests for it. This is important so I don't break it in a
   future version unintentionally.
-* Commit, do not mess with rakefile, version, or history.
+* Commit, do not mess with rakefile, version, or history
   (if you want to have your own version, that is fine but
-   bump version in a commit by itself I can ignore when I pull)
+  bump version in a commit by itself I can ignore when I pull).
 * Send me a pull request. Bonus points for topic branches.
 
 == Copyright
