@@ -3,6 +3,7 @@ require 'uri'
 require 'net/http'
 require 'webrick'  
 
+
  module ProxyToServer
   # This implements the connection that proxies an incoming file to to the 
   # respective CouchDB instance, as an attachment.
@@ -66,6 +67,9 @@ require 'webrick'
        
         # Try the webrick parser
         @req = WEBrick::HTTPRequest.new(WEBrick::Config::HTTP)
+        @res = WEBrick::HTTPResponse.new(WEBrick::Config::HTTP)
+        
+        puts @res.to_s
 
         StringIO.open(header_data, 'rb') do |socket|
           @req.parse(socket)
