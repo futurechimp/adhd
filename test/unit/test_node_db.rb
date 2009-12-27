@@ -88,7 +88,7 @@ class TestNodeDb <  Test::Unit::TestCase
       
       ndb.sync     
       # Two events should fire up -- a sync to and from the server
-      assert @event_log.length == 2
+      assert @event_log.length >= 2
       assert (@event_log.find {|log| old_log[log[2]].is_management}).length > 0
       assert (@event_log.find {|log| old_log[log[1]].is_management}).length > 0   
     end
@@ -122,7 +122,6 @@ class TestNodeDb <  Test::Unit::TestCase
       # @node_log.each do |n|
       #  puts "#{n.name}: #{tainted[n.name]} (#{n.status})"
       # end
-
       
       assert @node_log.all? {|n| (n.status == "UNAVAILABLE") or tainted[n.name]}
       
