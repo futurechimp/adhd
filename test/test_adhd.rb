@@ -1,8 +1,7 @@
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
-require 'adhd'
-require File.dirname(__FILE__) + '/../models'
+#require File.dirname(__FILE__) + '/../models'
 
 class TestAdhd <  Test::Unit::TestCase
 
@@ -11,7 +10,7 @@ class TestAdhd <  Test::Unit::TestCase
 
       setup do
         assert_nothing_raised do
-          NODESERVER = CouchRest.new("http://192.168.1.104:5984")
+          NODESERVER = CouchRest.new("http://192.168.1.93:5984")
           NODESERVER.default_database = "node_db"
           @node_db = CouchRest::Database.new(NODESERVER, "node_db")
         end
@@ -71,3 +70,4 @@ class TestAdhd <  Test::Unit::TestCase
   private
 
 end
+
