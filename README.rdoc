@@ -6,7 +6,7 @@ Adhd is an asynchronous, distributed hard drive.  Actually we're not sure if it'
 
 Don't use this software yet.  It is experimental and may eat your mother.
 
-Having said that, <pre>sudo gem install adhd</pre> may do the job.
+Having said that, <tt>sudo gem install adhd</tt> may do the job.
 
 == How it works
 
