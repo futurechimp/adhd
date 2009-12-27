@@ -4,7 +4,8 @@ require 'shoulda'
 require 'couchrest'
 require File.dirname(__FILE__) + '/../../lib/adhd/models/node_doc'
 
-# A db that always pretents to copy a db
+# A db that always pretends to copy a db
+#
 module FakeDb
   def get_target
     @target
@@ -20,6 +21,7 @@ module FakeDb
 end
 
 # A db that always throws a replication exception
+#
 module BlowDb
   def get_target
     @target
