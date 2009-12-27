@@ -3,7 +3,6 @@ require 'uri'
 require 'net/http'
 require 'webrick'  
 
-
  module ProxyToServer
   # This implements the connection that proxies an incoming file to to the 
   # respective CouchDB instance, as an attachment.
