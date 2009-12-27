@@ -9,6 +9,9 @@ class TestAdhd <  Test::Unit::TestCase
     context "at startup" do
 
       setup do
+        # TODO: this is total shit and needs to come out.  We could read a
+        # config file for tests instead of hardcoding all this crap, and
+        # probably localhost would do us just fine.
         assert_nothing_raised do
           NODESERVER = CouchRest.new("http://192.168.1.93:5984")
           NODESERVER.default_database = "node_db"
