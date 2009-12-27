@@ -11,39 +11,49 @@ class NodeDB
     @local_node_db = our_nodev.get_node_db
   end
 
+  # Syncs this management node with other existing management nodes by looping
+  # through all known management nodes.
+  #
+  # If replication to or from any management node fails, the method breaks
+  # and continues replicating to other management nodes until all management
+  # nodes have been tried.
+  #
+  # NOTE: randomize the order for load balancing here
+  #
+  # NOTE2: How to build skynet (TODO)
+  #        -------------------
+  #        If length of management is zero, then chose 3 different random
+  #        nodes at each sync, and sync with them in node_name order.
+  #        This guarantees that any updates on nodes are communicated in
+  #        O(log N) ephocs, at the cost of O(3 * N) connections per epoch.
+  #        It also guarantees any new management servers are discovered in
+  #        this O(log N) time, creating "jelly fish" or "partition proof"
+  #        availability.
   def sync
     # We replicate our state to the management node(s)
     management_nodes = Node.by_is_management.reverse
-    # NOTE: randomize the order for load balancing here
-
-    # NOTE2: How to build skynet (TODO)
-    #        -------------------
-    #        If length of management is zero, then chose 3 different random
-    #        nodes at each sync, and sync with them in node_name order.
-    #        This guarantees that any updates on nodes are communicated in
-    #        O(log N) ephocs, at the cost of O(3 * N) connections per epoch.
-    #        It also guarantees any new management servers are discovered in
-    #        this O(log N) time, creating "jelly fish" or "partition proof"
-    #        availability.
 
     management_nodes.each do |mng_node|
       remote_db = mng_node.get_node_db
-      bool_from = @our_node.replicate_from(local_node_db, mng_node, remote_db)
-      bool_to = @our_node.replicate_to(local_node_db, mng_node, remote_db)
-      if bool_from && bool_to && !our_node.is_management
-         #puts "Pushed to management"
+      from_success = @our_node.replicate_from(local_node_db, mng_node, remote_db)
+      to_success = @our_node.replicate_to(local_node_db, mng_node, remote_db)
+      if from_success && to_success && !our_node.is_management
          break
       end
-      #puts "Did not push to management"
     end
   end
 
+  # Returns all nodes marked as available
+  #
   def available_node_list
-    # Returns all nodes marked as available
     all_nodes = Node.by_name
     return all_nodes.select {|node| node.status == "RUNNING"}
   end
 
+  # Returns the first RUNNING management node.  There is no real dependency on
+  # any specific node, this is just a way for all nodes to agree on the same
+  # node to do the job of the head management node.
+  #
   def head_management_node
     management_nodes = Node.by_is_management.reverse
     hmn = management_nodes.find {|node| node.status == "RUNNING"}
@@ -53,11 +63,6 @@ class NodeDB
 end
 
 class Node  < CouchRest::ExtendedDocument
-  #NODESERVER = CouchRest.new("#{ARGV[1]}")
-  #NODESERVER.default_database = "#{ARGV[0]}_node_db"
-
-  #use_database NODESERVER.default_database
-
   unique_id :name
 
   property :name
@@ -75,22 +80,16 @@ class Node  < CouchRest::ExtendedDocument
   def get_node_db
     server = CouchRest.new("#{url}")
     db = server.database!("#{name}_node_db")
-    # puts "Open db #{db}"
-    db
   end
 
   def get_shard_db
     server = CouchRest.new("#{url}")
     db = server.database!("#{name}_shard_db")
-    # puts "Open db #{db}"
-    db
   end
 
   def get_content_db(shard_db_name)
     server = CouchRest.new("#{url}")
     db = server.database!("#{name}_#{shard_db_name}_content_db")
-    # puts "Open db #{db}"
-    db
   end
 
   # Replicating databases and marking nodes as unavailable
@@ -108,6 +107,11 @@ class Node  < CouchRest::ExtendedDocument
 
   private
 
+  # Replicates to or from a management node database.  The direction of
+  # replication is controlled by a boolean property.
+  #
+  # Returns true if replication succeeds, false if not.
+  #
   def replicate_to_or_from(local_db, other_node, remote_db, to = true)
     # Do not try to contact unavailable nodes
     return false if other_node.status == "UNAVAILABLE"
@@ -128,7 +132,7 @@ class Node  < CouchRest::ExtendedDocument
       other_node.save
       return false
     end
-  
+
   end
 
 
