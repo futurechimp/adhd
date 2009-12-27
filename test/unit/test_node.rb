@@ -5,11 +5,11 @@ require 'couchrest'
 require File.dirname(__FILE__) + '/../../lib/adhd/models/node_doc'
 
 # A db that always pretents to copy a db
-module Fake_db 
+module FakeDb
   def get_target
     @target
   end
-        
+
   def replicate_to t
     @target = t
   end
@@ -20,13 +20,13 @@ module Fake_db
 end
 
 # A db that always throws a replication exception
-module Blow_db
+module BlowDb
   def get_target
     @target
   end
-        
+
   def replicate_to t
-    throw Exception.new 
+    throw Exception.new
   end
 
   def replicate_from target
@@ -76,42 +76,40 @@ class TestAdhd <  Test::Unit::TestCase
       assert @node.respond_to? "replicate_from"
     end
 
+  context "replication" do
 
-   context "replication" do
-        
     setup do
-      @other_node = Node.new  
-      
+      @other_node = Node.new
+
       # Simulate a DB class
       local_db_klass = Class.new do
-        include Fake_db
+        include FakeDb
       end
       local_blow_db_klass = Class.new do
-        include Blow_db
+        include BlowDb
       end
-
 
       @node.name = "Node1"
       @other_node.name = "Node2"
       @local_db = local_db_klass.new
-      @local_blow_db = local_blow_db_klass.new          
+      @local_blow_db = local_blow_db_klass.new
     end
-                
+
     should "copy databases across" do
       @node.replicate_to(@local_db, @other_node, "TARGET")
       assert @local_db.get_target && @local_db.get_target == "TARGET"
     end
-    
-    should "not copy to same node" do    
+
+    should "not copy to same node" do
       assert !@node.replicate_to(@local_db, @node, "TARGET")
       assert !@local_db.get_target # Has not copied anything indeed
     end
-    
-    should "not copy to same node" do    
+
+    should "not copy to same node" do
       assert !@node.replicate_to(@local_db, @node, "TARGET")
       assert !@local_db.get_target # Has not copied anything indeed
     end
-    
+
     should "not copy to unavailable nodes" do
       @other_node.status = "UNAVAILABLE"
       assert !@node.replicate_to(@local_db, @other_node, "TARGET")
@@ -119,26 +117,23 @@ class TestAdhd <  Test::Unit::TestCase
     end
 
     should "tag unavailable nodes" do
-      Fake_node = Class.new do
+      fake_node_klass = Class.new do
         attr_accessor :status, :saved, :name
         def initialize
           @name = "Node2"
         end
         def save
           @saved = true
-        end        
+        end
       end
-      fake_node = Fake_node.new
-      
+      fake_node = fake_node_klass.new
+
       assert !@node.replicate_to(@local_blow_db, fake_node, "TARGET")
       assert fake_node.status == "UNAVAILABLE"
       assert fake_node.saved
     end
-   
-   end  
 
+    end
   end
-
-
 end
 
