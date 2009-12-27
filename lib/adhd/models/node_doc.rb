@@ -43,12 +43,17 @@ class NodeDB
     end
   end
 
+  # Returns all nodes marked as available
+  #
   def available_node_list
-    # Returns all nodes marked as available
     all_nodes = Node.by_name
     return all_nodes.select {|node| node.status == "RUNNING"}
   end
 
+  # Returns the first RUNNING management node.  There is no real dependency on
+  # any specific node, this is just a way for all nodes to agree on the same
+  # node to do the job of the head management node.
+  #
   def head_management_node
     management_nodes = Node.by_is_management.reverse
     hmn = management_nodes.find {|node| node.status == "RUNNING"}
