@@ -1,7 +1,7 @@
+# Models a CouchDB document containing a single file attachment with a bit of
+# metadata about the file.
+#
 class ContentDoc < CouchRest::ExtendedDocument
-  # NOTE: NO DEFAULT DATABASE IN THE OBJECT -- WE WILL BE STORING A LOT OF
-  # DATABASES OF THIS TYPE.
-
 
   property :_id
   property :internal_id
