@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{adhd}
-  s.version = "0.1.1"
+  s.version = "0.1.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["dave.hrycyszyn@headlondon.com"]
-  s.date = %q{2009-12-27}
+  s.date = %q{2009-12-28}
   s.description = %q{More to say when something works! Do not bother installing this! }
   s.email = %q{dave.hrycyszyn@headlondon.com}
   s.executables = ["adhd", "adhd_cleanup"]
@@ -34,6 +34,7 @@ Gem::Specification.new do |s|
      "lib/adhd/models/content_shard.rb",
      "lib/adhd/models/node_db.rb",
      "lib/adhd/models/node_doc.rb",
+     "lib/adhd/models/replication_connection.rb",
      "lib/adhd/models/shard_range.rb",
      "lib/adhd/node_manager.rb",
      "lib/adhd/reactor.rb",
@@ -60,7 +61,9 @@ Gem::Specification.new do |s|
      "test/helper.rb",
      "test/test_adhd.rb",
      "test/unit/test_content_doc.rb",
-     "test/unit/test_node.rb"
+     "test/unit/test_node.rb",
+     "test/unit/test_node_db.rb",
+     "test/unit/test_replication_connection.rb"
   ]
   s.homepage = %q{http://github.com/futurechimp/adhd}
   s.rdoc_options = ["--charset=UTF-8"]
@@ -69,6 +72,8 @@ Gem::Specification.new do |s|
   s.summary = %q{An experiment in distributed file replication using CouchDB}
   s.test_files = [
     "test/unit/test_content_doc.rb",
+     "test/unit/test_replication_connection.rb",
+     "test/unit/test_node_db.rb",
      "test/unit/test_node.rb",
      "test/helper.rb",
      "test/test_adhd.rb"
