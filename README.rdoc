@@ -8,7 +8,7 @@ Don't use this software yet.  It is experimental and may eat your mother.
 
 Having said that,
 
- sudo gem install adhd
+ sudo apt-get install couchdb; sudo gem install adhd
 
 may do the job.
 
