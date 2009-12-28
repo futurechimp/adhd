@@ -127,6 +127,9 @@ module Adhd
     def build_node_content_databases
       # NOTE: we will have to refresh those then we are re-assigned shards
       @contentdbs = {} if !@contentdbs
+      
+      # This is a fresh version of the DB, and we should use it to 
+      # add, remove and *update* shards
       current_shards = @srdb.get_content_shards
 
       # Add the new shards
@@ -136,11 +139,20 @@ module Adhd
           conn = UpdateNotifierConnection.new(@config.node_url,
                                           @config.couchdb_server_port,
                                           @our_node.name + "_" + shard_db.this_shard.shard_db_name + "_content_db", # NOTE: Sooo ugly!
-                                          Proc.new { |data| shard_db.sync })
+                                          Proc.new { |data|
+                                            puts "SYNC #{shard_db.this_shard.shard_db_name} #{data}" 
+                                            
+                                            # Lazy evaluation to make sure we
+                                            # get the latest shard information
+                                            @contentdbs[cs][0].sync 
+                                            })
           @conn_manager.add_connection(conn)
 
           # Store both the shard object and the update notifier
           @contentdbs[cs] = [shard_db, conn]
+        else
+          # Keep the same connection, but update the shard information
+          @contentdbs[cs] = [current_shards[cs], @contentdbs[cs][1]]
         end
       end
 

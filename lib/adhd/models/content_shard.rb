@@ -52,11 +52,14 @@ class ContentShard
     # all nodes or the first available aside us and master
     all_good = true
     this_shard.node_list.each do |node_name|
+      # Do not sync with ourselves
+      next if (@our_node.name == node_name)
+    
        # Push all changes to the other nodes
        remote_node = Node.by_name(:key =>  node_name).first
        remote_db = remote_node.get_content_db(this_shard.shard_db_name)
-       all_good &= @our_node.replicate_to(this_shard_db, remote_node, remote_db)
-
+       bool_to = @our_node.replicate_to(this_shard_db, remote_node, remote_db)
+       all_good &= bool_to
        if !am_master && bool_to
          # NOTE: How to build skynet, Note 2
          #       We are doing some "gonzo" replication, here. Our master is
