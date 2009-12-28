@@ -97,6 +97,13 @@ You can start adhd once it's installed by invoking it like this:
 
 If it worked, you should see a bunch of messages in your console telling you what's replicating, how many shards there are, etc.  If you want to test out multiple nodes on the same machine, you can simply have multiple config files which use different <tt>http_server_port</tt> and <tt>node_name</tt> values.
 
+Once a node has started, you can do something like this to add content to it:
+
+ curl -i -0 -T /path/to/somefile.txt http://192.168.1.93:5985/adhd/somefile.txt
+
+That command should PUT somefile.txt into the adhd cluster.  If there is more than one node running, somefile.txt will be automatically replicated to the proper shard.
+
+
 == Note on Patches/Pull Requests
 
 * Fork the project.
