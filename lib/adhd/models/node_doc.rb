@@ -58,7 +58,7 @@ class Node  < CouchRest::ExtendedDocument
     begin
       # Replicate to other node is possible
       if to
-        local_db.replicate_to(remote_db)
+        remote_db.replicate_from(local_db)
       else
         local_db.replicate_from(remote_db)
       end
