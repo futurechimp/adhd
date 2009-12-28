@@ -17,7 +17,7 @@ module Adhd
       @couch_server = CouchRest.new("http://#{config.node_url}:#{config.couchdb_server_port}")
       # @couch_server.default_database = "#{config.node_name}_node_db"
       @couch_db = @couch_server.database!("#{config.node_name}_node_db") # CouchRest::Database.new(@couch_server, "#{config.node_name}_node_db")
-      sync_with_buddy_node if config.buddy_server_url && config.buddy_server_db_name
+      sync_with_buddy_node if config.buddy_server_url && config.buddy_server_node_name
       @our_node = initialize_node
       build_node_admin_databases
       set_as_management_node_if_necessary
@@ -35,10 +35,10 @@ module Adhd
     def sync_with_buddy_node
       begin
         buddy_server = CouchRest.new("#{@config.buddy_server_url}")
-        buddy_db = buddy_server.database!(@config.buddy_server_db_name + "_node_db")
+        buddy_db = buddy_server.database!(@config.buddy_server_node_name + "_node_db")
         @couch_db.replicate_from(buddy_db)
       rescue
-        puts "Could not buddy up with node #{@config.buddy_server_db_name}"
+        puts "Could not buddy up with node #{@config.buddy_server_node_name}"
       end
     end
 

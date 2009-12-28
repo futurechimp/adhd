@@ -2,15 +2,9 @@
 
 Adhd is an asynchronous, distributed hard drive.  Actually we're not sure if it's really asynchronous or even what asynchronicity would mean in the context of a hard drive, but it is definitely distributed.  Adhd is essentially a management layer (written using Ruby and eventmachine) which controls clusters of CouchDB databases to replicate files across disparate machines.  Unlike most clustering storage solutions, adhd assumes that machines in the cluster may have different capabilities and is designed to work both inside and outside the data centre.
 
-== Installation
 
-Don't use this software yet.  It is experimental and may eat your mother.
 
-Having said that,
 
- sudo apt-get install couchdb; sudo gem install adhd
-
-may do the job.
 
 == How it works
 
@@ -64,6 +58,41 @@ Archive.org: those sex-ed videos and Bert the turtle from the Prelinger Archive 
 
 BBC News: material going up on the site right now will need a lot of bandwidth, but by next week most of this media will be out of the news cycle and can be consigned to a set of servers with much less bandwidth.  By next year, it is unlikely that this media will be viewed even a few times a day, so it could be smart to trade storage costs for speed and put old media on cheaper, lower-bandwidth boxes with huge hard drives.
 
+== Installation
+
+Don't use this software yet.  It is experimental and may eat your mother.
+
+Having said that,
+
+ sudo apt-get install couchdb; sudo gem install adhd
+
+may do the job.
+
+== Usage
+
+You'll need a config file that looks something like this:
+
+ ---
+    node_name: my_adhd_node
+    node_url: "192.168.1.93"
+    couchdb_server_port: 5984
+    http_server_port: 5985
+    buddy_server_url: "http://192.168.1.74:5984"
+    buddy_server_node_name: another_adhd_node
+
+The config parameters are:
+
+<tt>node_name</tt>: a unique prefix name that will be used as an identifier for your nodes in the global node database.
+
+<tt>node_url</tt>: the hostname or IP which the node should bind to.
+
+<tt>couchdb_server_port</tt>: the port that CouchDB is running on, usually 5984.
+
+<tt>http_server_port</tt>: the port which the adhd node should run on.
+
+<tt>buddy_server_url</tt>: the URL (including the CouchDB port) of any other adhd node which is currently running.  The node will connect to the buddy_server_url and replicate the cluster's management database information from it.  This can be blank for the first node or if you want to make an entirely new cluster.
+
+<tt>buddy_server_node_name</tt>:  the node_name of the buddy node as set in its config file.
 
 == Note on Patches/Pull Requests
 
