@@ -162,6 +162,7 @@ class ShardRange < CouchRest::ExtendedDocument
   # SHARDSERVER = CouchRest.new("#{ARGV[1]}")
   # SHARDSERVER.default_database = "#{ARGV[0]}_shard_db"
   # use_database SHARDSERVER.default_database
+  unique_id :shard_db_name
 
   property :range_start
   property :range_end

@@ -61,7 +61,7 @@ module  Adhd
       @buffer += data # Add the data to the current buffer
       updates = []
       if @buffer =~ /(\{[^\n]+\}\n)/
-        updates += $~.to_a
+        updates += ($~.to_a)[1..-1]
         # Trim the buffer to $_.end(0)
         @buffer = @buffer[$~.end(0)..-1]
       end
@@ -72,12 +72,7 @@ module  Adhd
       end
     end
 
-    #def close_connection
-    #  @conn_obj.close_handler(data)
-    #end
-
   end
-
 
   # Note: Some of manos's thoughts on how to manage our connections and events.
   #       We should build a class called connection_manager that we ask to build
@@ -154,19 +149,8 @@ module  Adhd
     end
 
   end
-
-  class Connection
-
-    def should_start?
-      !(@status == "RUNNING")
-    end
-
-    def is_closed?
-      (@status == "NOTRUNNING")
-    end
-
-  end
-
+  
+  
   # Manage a bunch of connections for us
   #
   class ConnectionBank
