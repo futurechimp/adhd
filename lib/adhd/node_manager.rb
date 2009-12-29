@@ -5,6 +5,7 @@ require File.dirname(__FILE__) + '/models/node_doc'
 require File.dirname(__FILE__) + '/models/node_db'
 require File.dirname(__FILE__) + '/models/content_doc'
 require File.dirname(__FILE__) + '/models/shard_range'
+require File.dirname(__FILE__) + '/models/shard_range_db'
 require File.dirname(__FILE__) + '/models/content_shard'
 
 module Adhd
@@ -130,8 +131,8 @@ module Adhd
     def build_node_content_databases
       # NOTE: we will have to refresh those then we are re-assigned shards
       @contentdbs = {} if !@contentdbs
-      
-      # This is a fresh version of the DB, and we should use it to 
+
+      # This is a fresh version of the DB, and we should use it to
       # add, remove and *update* shards
       current_shards = @srdb.get_content_shards
 
@@ -143,11 +144,9 @@ module Adhd
                                           @config.couchdb_server_port,
                                           @our_node.name + "_" + shard_db.this_shard.shard_db_name + "_content_db", # NOTE: Sooo ugly!
                                           Proc.new { |data|
-                                            # puts "SYNC #{shard_db.this_shard.shard_db_name} #{data}" 
-                                            
                                             # Lazy evaluation to make sure we
                                             # get the latest shard information
-                                            @contentdbs[cs][0].sync 
+                                            @contentdbs[cs][0].sync
                                             })
           @conn_manager.add_connection(conn)
 

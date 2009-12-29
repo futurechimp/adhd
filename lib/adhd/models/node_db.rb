@@ -1,3 +1,7 @@
+# Models a CouchDB node management database containing node descriptors
+# for the cluster. TODO: once we have some better tests in place, think about
+# renaming this class and refactoring.
+#
 class NodeDB
 
   attr_accessor :local_node_db, :our_node
@@ -16,17 +20,17 @@ class NodeDB
   # and continues replicating to other management nodes until all management
   # nodes have been tried.
   #
-  # NOTE: randomize the order for load balancing here
+  # TODO: randomize the order for load balancing here
   #
   # NOTE2: How to build skynet (TODO)
-  #        -------------------
-  #        If length of management is zero, then chose 3 different random
-  #        nodes at each sync, and sync with them in node_name order.
-  #        This guarantees that any updates on nodes are communicated in
-  #        O(log N) ephocs, at the cost of O(3 * N) connections per epoch.
-  #        It also guarantees any new management servers are discovered in
-  #        this O(log N) time, creating "jelly fish" or "partition proof"
-  #        availability.
+  #
+  # If length of management is zero, then chose 3 different random
+  # nodes at each sync, and sync with them in node_name order.
+  # This guarantees that any updates on nodes are communicated in
+  # O(log N) ephocs, at the cost of O(3 * N) connections per epoch.
+  # It also guarantees any new management servers are discovered in
+  # this O(log N) time, creating "jelly fish" or "partition proof"
+  # availability.
   def sync
     # We replicate our state to the management node(s)
     management_nodes = Node.by_is_management.reverse

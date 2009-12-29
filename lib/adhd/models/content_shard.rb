@@ -1,5 +1,5 @@
-
-
+# Models a CouchDB database which contains lots and lots of ContentDoc objects.
+#
 class ContentShard
   attr_accessor :nodes, :this_shard, :our_node, :this_shard_db
 
@@ -56,7 +56,7 @@ class ContentShard
     this_shard.node_list.each do |node_name|
       # Do not sync with ourselves
       next if (@our_node.name == node_name)
-    
+
        # Push all changes to the other nodes
        remote_node = Node.by_name(:key =>  node_name).first
        remote_db = remote_node.get_content_db(this_shard.shard_db_name)
