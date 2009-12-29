@@ -49,58 +49,58 @@ class TestReplicationConnection <  Test::Unit::TestCase
 
    end
 
-#    should "throw an exception if the second does not exist" do
-#      endconn = Proc.new do |ev, data|
-#        assert ev == :rec
+    should "throw an exception if the second does not exist" do
+      endconn = Proc.new do |ev, data|
+        assert ev == :rec
 
-#        # Stop the event machine
-#        EM::stop_event_loop()
-#      end
+        # Stop the event machine
+        EM::stop_event_loop()
+      end
 
-#      nonexistent_node = Node.new
-#      nonexistent_node.name = "a_nonexistent_node"
-#      nonexistent_node.url = "http://some.nonexistent.node"
-#      nonexistent_node_db = nonexistent_node.get_node_db
-#      conn = Adhd::ReplicationConnection.new @node1, @node1_db, nonexistent_node, nonexistent_node_db, endconn
+      nonexistent_node = Node.new
+      nonexistent_node.name = "a_nonexistent_node"
+      nonexistent_node.url = "http://some.nonexistent.node"
+      nonexistent_node_db = nonexistent_node.get_node_db
+      conn = Adhd::ReplicationConnection.new @node1, @node1_db, nonexistent_node, nonexistent_node_db, endconn
 
-#      EM::run {
-#        begin
-#          conn.start
-#          assert false
-#          EM::stop_event_loop()
-#        rescue
-#          assert true
-#          EM::stop_event_loop()
-#        end
-#      }
+      EM::run {
+        begin
+          conn.start
+          assert false
+          EM::stop_event_loop()
+        rescue
+          assert true
+          EM::stop_event_loop()
+        end
+      }
 
-#    end
+    end
 
-#    should "throw an exception if the first does not exist" do
-#      endconn = Proc.new do |ev, data|
-#        assert ev == :rec
+    should "throw an exception if the first does not exist" do
+      endconn = Proc.new do |ev, data|
+        assert ev == :rec
 
-#        # Stop the event machine
-#        EM::stop_event_loop()
-#      end
+        # Stop the event machine
+        EM::stop_event_loop()
+      end
 
-#      nonexistent_node = Node.new
-#      nonexistent_node.name = "a_nonexistent_node"
-#      nonexistent_node.url = "http://some.nonexistent.node:9999"
-#      nonexistent_node_db = nonexistent_node.get_node_db
-#      conn = Adhd::ReplicationConnection.new nonexistent_node, nonexistent_node_db, @node2, @node2_db, endconn
+      nonexistent_node = Node.new
+      nonexistent_node.name = "a_nonexistent_node"
+      nonexistent_node.url = "http://some.nonexistent.node:9999"
+      nonexistent_node_db = nonexistent_node.get_node_db
+      conn = Adhd::ReplicationConnection.new nonexistent_node, nonexistent_node_db, @node2, @node2_db, endconn
 
-#      EM::run {
-#        begin
-#          conn.start
-#          assert false
-#          EM::stop_event_loop()
-#        rescue
-#          assert true
-#          EM::stop_event_loop()
-#        end
-#      }
-#    end
+      EM::run {
+        begin
+          conn.start
+          assert false
+          EM::stop_event_loop()
+        rescue
+          assert true
+          EM::stop_event_loop()
+        end
+      }
+    end
 
 
   end
