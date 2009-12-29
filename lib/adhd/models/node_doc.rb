@@ -1,4 +1,9 @@
-
+# An adhd management node containing information about the cluster.
+#
+# TODO: rename this file to "node.rb" instead of  "node_doc.rb"
+#
+# TODO: ditch the "get_" stuff, we're not writing C# here.
+#
 class Node  < CouchRest::ExtendedDocument
   unique_id :name
 
