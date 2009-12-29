@@ -20,7 +20,7 @@ The node management database keeps a record of all existing nodes, their locatio
 
 The shard range database is also replicated everywhere.  It allows any node to find out which storage nodes are responsible for holding a particular piece of content.  Management nodes are in charge of maintaining the shard database and pushing changes to non-management nodes.
 
-Storage nodes hold one or more shards in addition to the management and shard range databases.  These shards contain the content and some metadata.  A shard consists of a CouchDB database which holds Couch documents - one attached file per document.
+Storage nodes hold one or more shards in addition to the management and shard range databases.  These shards contain the file content and some metadata about the stored file.  Physically, a shard consists of a CouchDB database which holds Couch documents - one attached file per document.
 
 ==== PUT requests
 
