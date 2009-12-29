@@ -111,7 +111,7 @@ require 'webrick'
 
         # Now get or write the document associated with this file
         
-        # EM.defer {
+        #EM.defer {
         if @req.request_method == "GET"
 
           @our_doc = @node_manager.srdb.get_doc_directly(@req.header["ID"])
@@ -148,7 +148,7 @@ require 'webrick'
             close_connection
           end
         end
-        # }
+        #}
 
         # Now send the reply as an HTTP1.0 reponse
 
