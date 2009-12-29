@@ -2,16 +2,10 @@ require 'rubygems'
 require 'test/unit'
 require 'shoulda'
 require File.dirname(__FILE__) + '/../../lib/adhd/models/node_db'
+require File.dirname(__FILE__) + '/../support/node'
+require File.dirname(__FILE__) + '/../support/node_db'
 
 class TestNodeDb <  Test::Unit::TestCase
-
-  def setup
-    load File.dirname(__FILE__) + '/../support/node'
-  end
-
-  def teardown
-    load File.dirname(__FILE__) + '/../../lib/adhd/models/node_doc'
-  end
 
   def get_random_node
     random_log = @node_log.sort_by { rand }
@@ -31,7 +25,7 @@ class TestNodeDb <  Test::Unit::TestCase
       @event_log = []
       @node_log = []
       100.times do |i|
-        n = Node.new @event_log
+        n = FakeAssNode.new @event_log
         if i < 5
           n.is_management = 3
         end
@@ -44,12 +38,11 @@ class TestNodeDb <  Test::Unit::TestCase
         @node_log << n
       end
 
-      Node.set_nodes @node_log
-
+      FakeAssNode.set_nodes @node_log
     end
 
     should "return some management nodes (even when fake)" do
-      assert Node.by_is_management.length > 0
+      assert FakeAssNode.by_is_management.length > 0
     end
 
     should "sync to a management node (PROBABILISTIC)" do
@@ -58,7 +51,8 @@ class TestNodeDb <  Test::Unit::TestCase
       while !target_node or target_node.is_management
         target_node = get_random_node
       end
-      ndb = NodeDB.new(target_node)
+      ndb = FakeAssNodeDb.new(target_node)
+      ndb.set_nodes @node_log
 
       ndb.sync
       # Two events should fire up -- a sync to and from the server
@@ -80,7 +74,8 @@ class TestNodeDb <  Test::Unit::TestCase
       1000.times do |i|
         target_node = get_random_node
         first_node = target_node if !first_node
-        ndb = NodeDB.new(target_node)
+        ndb = FakeAssNodeDb.new(target_node)
+        ndb.set_nodes @node_log
         ndb.sync
       end
 

@@ -14,40 +14,40 @@ require File.dirname(__FILE__) + '/replication_connection'
 # a db and ensure replications do not happen too often. Internally the manager
 # keeps track of pending replication connections, and activates / executes
 # them within a period of time set as an interval. If replication between two
-# resources is requested multiple times it is only perfomed once. 
+# resources is requested multiple times it is only perfomed once.
 class ReplicationManager
 
   def initialize interval
     @interval = interval
-    
-    # A hash of replication connections by name, pending execution 
-    @schedule = {}  
+
+    # A hash of replication connections by name, pending execution
+    @schedule = {}
     @active = false
   end
-  
+
   # Add a replication connection to the replication shedule
   # If the same replication is already scheduled it will only happen once.
   def add_replication conn
-    
+
     if @schedule.has_key? conn.name
       return
-    else 
+    else
       @schedule[conn.name] = conn
-      
+
       if !@active
         @active = true
         EM::add_timer(@interval) { run_replications }
-      end    
-    end        
+      end
+    end
   end
-  
+
   # Run all the replications requested, and start a new schedule
   def run_replications
       # Add fresh schedule
       old_shedule = @schedule
       @schedule = {}
       @active = false
-      
+
       old_shedule.each_value do |conn|
         conn.start
       end
@@ -109,13 +109,13 @@ class Node  < CouchRest::ExtendedDocument
   #
   def replicate_to_or_from_async(local_db, other_node, remote_db, to = true, now=true)
     # Do not try to contact unavailable nodes
-    
+
     # return false if other_node.status == "UNAVAILABLE"
     # No point replicating to ourselves
     return false if (name == other_node.name)
 
     # Define a call back
-    endconn = Proc.new do |ev, data|       
+    endconn = Proc.new do |ev, data|
         if ev == :rec
           #puts "DID Sync #{local_db.name} from to #{other_node.name}: #{data}"
         else
@@ -127,16 +127,16 @@ class Node  < CouchRest::ExtendedDocument
       # Replicate to other node is possible
       if to
         if !now && EM::reactor_running?()
-          conn = Adhd::ReplicationConnection.new other_node, remote_db, 
-                                                  self, local_db, endconn 
+          conn = Adhd::ReplicationConnection.new other_node, remote_db,
+                                                  self, local_db, endconn
           @@replication_manager.add_replication conn
         else
           remote_db.replicate_from(local_db)
-        end  
-                
+        end
+
       else
         if !now && EM::reactor_running?()
-          conn = Adhd::ReplicationConnection.new self, local_db, other_node, 
+          conn = Adhd::ReplicationConnection.new self, local_db, other_node,
                                                  remote_db, endconn
           @@replication_manager.add_replication conn
         else

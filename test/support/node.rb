@@ -1,4 +1,4 @@
-class Node
+class FakeAssNode
   def initialize event_log
     @event_log = event_log
   end

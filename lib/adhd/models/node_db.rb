@@ -24,17 +24,19 @@ class NodeDB
   #
   # NOTE2: How to build skynet (TODO)
   #
-  # If length of management is zero, then chose 3 different random
+  # If length of management is zero, then choose 3 different random
   # nodes at each sync, and sync with them in node_name order.
+  #
   # This guarantees that any updates on nodes are communicated in
   # O(log N) ephocs, at the cost of O(3 * N) connections per epoch.
+  #
   # It also guarantees any new management servers are discovered in
   # this O(log N) time, creating "jelly fish" or "partition proof"
   # availability.
+  #
   def sync
     # We replicate our state to the management node(s)
-    management_nodes = Node.by_is_management.reverse
-
+    management_nodes = find_management_nodes
     management_nodes.each do |mng_node|
       remote_db = mng_node.get_node_db
       from_success = @our_node.replicate_from(local_node_db, mng_node, remote_db)
@@ -60,6 +62,14 @@ class NodeDB
     management_nodes = Node.by_is_management.reverse
     hmn = management_nodes.find {|node| node.status == "RUNNING"}
     return hmn
+  end
+
+  # Returns a list of management nodes. This is a bit of a hack, it's really
+  # only here so that we can override the method in a subclass for testing
+  # purposes (SEE: test_node_db).
+  #
+  def find_management_nodes
+    management_nodes = Node.by_is_management.reverse
   end
 
 end
