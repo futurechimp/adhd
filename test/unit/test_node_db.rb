@@ -3,41 +3,15 @@ require 'test/unit'
 require 'shoulda'
 require File.dirname(__FILE__) + '/../../lib/adhd/models/node_db'
 
-class Node
-  def initialize event_list
-    @event_list = event_list
-  end
-
-  attr_accessor :status, :name, :is_management
-
-  def self.set_nodes node_list
-    @@nodes = node_list
-  end
-
-  def self.by_is_management
-    # Return a random set of nodes
-    @@nodes.select {|n| n.is_management && n.is_management > 0}
-  end
-
-  def get_node_db
-    @name
-  end
-
-  def replicate_to(local_db, other_node, remote_db)
-    return false if other_node.status == "UNAVAILABLE" or other_node.name == name
-    @event_list << [:rep, local_db, remote_db]
-    true
-  end
-
-  def replicate_from(local_db, other_node, remote_db)
-    return false if other_node.status == "UNAVAILABLE" or other_node.name == name
-    @event_list << [:rep, remote_db, local_db]
-    true
-  end
-
-end
-
 class TestNodeDb <  Test::Unit::TestCase
+
+  def setup
+    load File.dirname(__FILE__) + '/../support/node'
+  end
+
+  def teardown
+    load File.dirname(__FILE__) + '/../../lib/adhd/models/node_doc'
+  end
 
   def get_random_node
     random_log = @node_log.sort_by { rand }
@@ -89,11 +63,17 @@ class TestNodeDb <  Test::Unit::TestCase
       ndb.sync
       # Two events should fire up -- a sync to and from the server
       assert @event_log.length >= 2
-      assert (@event_log.find {|log| old_log[log[2]].is_management}).length > 0
-      assert (@event_log.find {|log| old_log[log[1]].is_management}).length > 0
+
+      assert (@event_log.find {|log_entry|
+        old_log[log_entry[2]].is_management
+      }).length > 0
+
+      assert (@event_log.find {|log_entry|
+        old_log[log_entry[1]].is_management
+      }).length > 0
     end
 
-    should "sync eventually to all" do
+    should "eventually sync to all other nodes" do
       # Ok this is going to be insane
       # We test that eventually all nodes get some info
       first_node = nil
@@ -104,7 +84,7 @@ class TestNodeDb <  Test::Unit::TestCase
         ndb.sync
       end
 
-      #Now we want to show that all running nodes go the information
+      # Now we want to show that all running nodes got the information
       # if they called sync after the node updated
 
       tainted = {}
