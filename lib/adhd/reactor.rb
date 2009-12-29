@@ -137,7 +137,7 @@ module  Adhd
     def keep_alive_or_kill!
       if ! keep_alive?
         # Schedule this connection for close
-        connection_inside.close_connection_after_writing
+        connection_inside.close_connection_after_writing if connection_inside
         @status = "NOTRUNNING"
       end
     end

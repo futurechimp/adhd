@@ -16,13 +16,14 @@ class ShardRangeDB
   end
   
   def sync
+  
     # We replicate our state from the management node(s)
     # We never push content if we are only storage
     management_nodes = Node.by_is_management.reverse
     
     # NOTE: randomize the order for load balancing here    
     
-    management_nodes.each do |mng_node|      
+    management_nodes.each do |mng_node|
       remote_db = mng_node.get_shard_db      
       bool_from = @our_node.replicate_from(local_shard_db, mng_node, remote_db)
       if our_node.is_management 

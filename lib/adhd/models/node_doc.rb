@@ -109,7 +109,8 @@ class Node  < CouchRest::ExtendedDocument
   #
   def replicate_to_or_from_async(local_db, other_node, remote_db, to = true, now=true)
     # Do not try to contact unavailable nodes
-    return false if other_node.status == "UNAVAILABLE"
+    
+    # return false if other_node.status == "UNAVAILABLE"
     # No point replicating to ourselves
     return false if (name == other_node.name)
 
@@ -144,6 +145,8 @@ class Node  < CouchRest::ExtendedDocument
       end
       return true
     rescue Exception => e
+      # INSERT DEBUGGER HERE
+      raise e
       # Other node turns out to be unavailable
       other_node.status = "UNAVAILABLE"
       other_node.save

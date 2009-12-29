@@ -40,10 +40,12 @@ EM.run {
     @node_manager.run
   end
   
-  
-  # Start the server
-  EventMachine::start_server @config.node_url, @config.http_server_port, AdhdRESTServer, @node_manager
-  
+  begin
+    # Start the server
+    EventMachine::start_server @config.node_url, @config.http_server_port, AdhdRESTServer, @node_manager
+  rescue
+    puts "Could not start rest server..."
+  end
 
   
 }
