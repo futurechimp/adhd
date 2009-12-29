@@ -25,7 +25,7 @@ class TestNodeDb <  Test::Unit::TestCase
       @event_log = []
       @node_log = []
       100.times do |i|
-        n = FakeAssNode.new @event_log
+        n = FakeNode.new @event_log
         if i < 5
           n.is_management = 3
         end
@@ -38,11 +38,11 @@ class TestNodeDb <  Test::Unit::TestCase
         @node_log << n
       end
 
-      FakeAssNode.set_nodes @node_log
+      FakeNode.set_nodes @node_log
     end
 
     should "return some management nodes (even when fake)" do
-      assert FakeAssNode.by_is_management.length > 0
+      assert FakeNode.by_is_management.length > 0
     end
 
     should "sync to a management node (PROBABILISTIC)" do

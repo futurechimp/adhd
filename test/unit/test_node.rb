@@ -37,7 +37,7 @@ module BlowDb
 
 end
 
-class TestAdhd <  Test::Unit::TestCase
+class TestNode <  Test::Unit::TestCase
 
   context "The Node model" do
     setup do
