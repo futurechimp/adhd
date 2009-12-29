@@ -36,7 +36,7 @@ module  Adhd
   module DbUpdateNotifier
 
     def initialize(db_name, conn_obj)
-      puts "Db update notifier start..."
+      # puts "Db update notifier start..."
       @db_name = db_name
       @conn_obj = conn_obj
       @buffer = ""
@@ -100,23 +100,25 @@ module  Adhd
       @keep_alive = true
     end
 
-    def kill
+    def kill clean_up_op
       @keep_alive = false
+      @clean_up_op = clean_up_op
+      keep_alive_or_kill!
     end
 
     def start
-      puts "Registering the connection for: #{@db_name}"
+      #puts "Registering the connection for: #{@db_name}"
       EM.connect @node_url, @couchdb_server_port, Adhd::DbUpdateNotifier, @db_name, self
       @status = "RUNNING"
     end
 
     def event_handler data
-      puts "Run a crazy sync on db: #{@db_name}"
+      #puts "Run a crazy sync on db: #{@db_name}"
       @sync_block.call(data)
     end
 
     def close_handler
-      puts "Closed abnormally: #{reason}"
+      #puts "Closed abnormally: #{reason}"
       @status = "NOTRUNNING"
     end
 
@@ -146,6 +148,10 @@ module  Adhd
 
     def is_closed?
       (@status == "NOTRUNNING")
+    end
+    
+    def unbind
+      @clean_up_op.call if @clean_up_op
     end
 
   end
@@ -204,7 +210,7 @@ module  Adhd
     def run_all
       @our_connections.each do |c|
         if c.is_closed? or !c.keep_alive?
-          puts "Actually rerun #{c.db_name}..."
+          #puts "Actually rerun #{c.db_name}..."
           rerun(c)
         end
       end

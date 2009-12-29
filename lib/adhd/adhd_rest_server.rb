@@ -16,7 +16,6 @@ require 'webrick'
   def post_init
      # We have opened a connection to the DB server, so now it is time
      # to send the initial Couch request, using HTTP 1.0.
-     puts "Send request: #{@init_request}"
      send_data @init_request
   end
 
@@ -111,6 +110,8 @@ require 'webrick'
         #       Right now we are blocking and it sucks.
 
         # Now get or write the document associated with this file
+        
+        # EM.defer {
         if @req.request_method == "GET"
 
           @our_doc = @node_manager.srdb.get_doc_directly(@req.header["ID"])
@@ -121,9 +122,10 @@ require 'webrick'
             handle_get
           else
             send_data "Problem"
+            close_connection
           end
         end
-
+        
         if @req.request_method == "PUT"
           # Define a Doc with the data so far
           @our_doc = ContentDoc.new
@@ -143,8 +145,10 @@ require 'webrick'
             handle_put
           else
             send_data "Problem"
+            close_connection
           end
         end
+        # }
 
         # Now send the reply as an HTTP1.0 reponse
 
@@ -192,13 +196,13 @@ require 'webrick'
     request = "GET /#{dbname}/#{docid}/#{@our_doc[:doc].filename} HTTP/1.0\r\n\r\n"
     #send_data request
     #close_connection_after_writing
-    puts "Connect to #{server_addr} port #{server_port}"
+    # puts "Connect to #{server_addr} port #{server_port}"
     conn = EM::connect server_addr, server_port, ProxyToServer, self, request
-    EM::enable_proxy proxy_conn, self, 1024
+    EM::enable_proxy proxy_conn, self, 1024*10
   end
 
   def proxy_unbind
-    # Our cpnnection to the CouchDB has just been torn down
+    # Our connection to the CouchDB has just been torn down
     close_connection_after_writing
   end
 
@@ -225,13 +229,13 @@ require 'webrick'
     request += @buffer
     #send_data request
     #close_connection_after_writing
-    puts "Connect to #{server_addr} port #{server_port}"
+    # puts "Connect to #{server_addr} port #{server_port}"
     conn = EM::connect server_addr, server_port, ProxyToServer, self, request
-    EM::enable_proxy self, proxy_conn, 1024
+    EM::enable_proxy self, proxy_conn, 1024 * 10
   end
 
    def unbind
-     puts "-- someone disconnected from the echo server!"
+     # puts "-- someone disconnected from the echo server!"
    end
  end
 
