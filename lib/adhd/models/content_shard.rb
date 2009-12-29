@@ -41,8 +41,8 @@ class ContentShard
     if !am_master
       master_node = Node.by_name(:key => this_shard.master_node).first
       remote_db = master_node.get_content_db(this_shard.shard_db_name)
-      bool_to = @our_node.replicate_to(this_shard_db, master_node, remote_db)
-      bool_to &= @our_node.replicate_from(this_shard_db, master_node, remote_db)
+      bool_to = @our_node.replicate_to(this_shard_db, master_node, remote_db, false)
+      bool_to &= @our_node.replicate_from(this_shard_db, master_node, remote_db, false)
       puts "Replicate #{this_shard.shard_db_name} from/to master #{master_node.name}" if bool_to
       if bool_to
         @last_sync_seq = @this_shard_db.info['update_seq']
@@ -60,8 +60,8 @@ class ContentShard
        # Push all changes to the other nodes
        remote_node = Node.by_name(:key =>  node_name).first
        remote_db = remote_node.get_content_db(this_shard.shard_db_name)
-       bool_to = @our_node.replicate_to(this_shard_db, remote_node, remote_db)
-       bool_to &= @our_node.replicate_from(this_shard_db, remote_node, remote_db)
+       bool_to = @our_node.replicate_to(this_shard_db, remote_node, remote_db, false)
+       bool_to &= @our_node.replicate_from(this_shard_db, remote_node, remote_db, false)
        puts "Replicate #{this_shard.shard_db_name} from/to #{remote_node.name}" if bool_to
        all_good &= bool_to
        if !am_master && bool_to

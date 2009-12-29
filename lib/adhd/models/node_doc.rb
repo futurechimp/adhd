@@ -89,12 +89,12 @@ class Node  < CouchRest::ExtendedDocument
   # for databases. The manager should set up continuous replication across
   # databases, and only do a replication after some time lapses.
 
-  def replicate_to(local_db, other_node, remote_db)
-    replicate_to_or_from_async(local_db, other_node, remote_db, true)
+  def replicate_to(local_db, other_node, remote_db, now = true)
+    replicate_to_or_from_async(local_db, other_node, remote_db, true, now)
   end
 
-  def replicate_from(local_db, other_node, remote_db)
-    replicate_to_or_from_async(local_db, other_node, remote_db, false)
+  def replicate_from(local_db, other_node, remote_db, now = true)
+    replicate_to_or_from_async(local_db, other_node, remote_db, false, now)
   end
 
   private
@@ -107,7 +107,7 @@ class Node  < CouchRest::ExtendedDocument
   #
   # Returns true if replication succeeds, false if not.
   #
-  def replicate_to_or_from_async(local_db, other_node, remote_db, to = true)
+  def replicate_to_or_from_async(local_db, other_node, remote_db, to = true, now=true)
     # Do not try to contact unavailable nodes
     return false if other_node.status == "UNAVAILABLE"
     # No point replicating to ourselves
@@ -125,7 +125,7 @@ class Node  < CouchRest::ExtendedDocument
     begin
       # Replicate to other node is possible
       if to
-        if EM::reactor_running?()
+        if !now && EM::reactor_running?()
           conn = Adhd::ReplicationConnection.new other_node, remote_db, 
                                                   self, local_db, endconn 
           @@replication_manager.add_replication conn
@@ -134,7 +134,7 @@ class Node  < CouchRest::ExtendedDocument
         end  
                 
       else
-        if EM::reactor_running?()
+        if !now && EM::reactor_running?()
           conn = Adhd::ReplicationConnection.new self, local_db, other_node, 
                                                  remote_db, endconn
           @@replication_manager.add_replication conn
