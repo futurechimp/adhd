@@ -1,4 +1,7 @@
-class FakeAssNode
+# A fake Node-like class which can be used in place of the real Node class when
+# running tests.
+#
+class FakeNode
   def initialize event_log
     @event_log = event_log
   end
