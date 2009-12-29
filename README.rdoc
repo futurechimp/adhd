@@ -71,10 +71,10 @@ You'll need a node_config.yml file that looks something like this:
 
  ---
     node_name: my_adhd_node
-    node_url: "192.168.1.93"
+    node_url: "0.0.0.0"
     couchdb_server_port: 5984
     http_server_port: 5985
-    buddy_server_url: "http://192.168.1.74:5984"
+    buddy_server_url: "http://other.couch.server:5984"
     buddy_server_node_name: another_adhd_node
 
 The config parameters are:
@@ -94,6 +94,8 @@ The config parameters are:
 You can start adhd once it's installed by invoking it like this:
 
  adhd -c /path/to/node_config.yml
+
+Note that by default, CouchDB binds only to the IP 127.0.0.1, so if you want to be able to replicate in a cluster across machines, you will need to modify your CouchDB instances so that they bind to 0.0.0.0 (all available interfaces).  Don't do this on a public-facing server unless you, work out a security vpn, are really promiscuous or feeling insane.
 
 If it worked, you should see a bunch of messages in your console telling you what's replicating, how many shards there are, etc.  If you want to test out multiple nodes on the same machine, you can simply have multiple config files which use different <tt>http_server_port</tt> and <tt>node_name</tt> values.
 
