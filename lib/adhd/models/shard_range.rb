@@ -109,7 +109,11 @@ class ShardRangeDB
       # Try to write the doc to this node
       begin
         remote_node = Node.by_name(:key => node).first
+        
+        # Do not contact unavailable nodes
+        next if remote_node.status == "UNAVAILABLE"
         remote_ndb = NodeDB.new(remote_node)
+        
         remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
         remote_content_shard.this_shard_db.save_doc(content_doc)
         success = {:ok => true, :doc => content_doc, :db => remote_content_shard.this_shard_db}

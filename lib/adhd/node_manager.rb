@@ -111,7 +111,10 @@ module Adhd
     #  XXXX doc question: what does it mean to be 'the admin'?
     #
     def handle_node_update update
-      return if @ndb.head_management_node && ! (@ndb.head_management_node.name == @our_node.name)
+      # Only headnodes deal with this
+      mng = @ndb.head_management_node
+      return if !mng
+      return if !(@ndb.head_management_node.name == @our_node.name)
 
       # Given the shard_db and the node_db we should work out a new allocation
       node_list = Node.by_name
@@ -140,7 +143,7 @@ module Adhd
                                           @config.couchdb_server_port,
                                           @our_node.name + "_" + shard_db.this_shard.shard_db_name + "_content_db", # NOTE: Sooo ugly!
                                           Proc.new { |data|
-                                            puts "SYNC #{shard_db.this_shard.shard_db_name} #{data}" 
+                                            # puts "SYNC #{shard_db.this_shard.shard_db_name} #{data}" 
                                             
                                             # Lazy evaluation to make sure we
                                             # get the latest shard information
@@ -153,7 +156,8 @@ module Adhd
         else
           # Keep the same connection, but update the shard information
           @contentdbs[cs] = [current_shards[cs], @contentdbs[cs][1]]
-        end
+        end        
+        
       end
 
       # Delete what we do not need
@@ -165,6 +169,9 @@ module Adhd
           @contentdbs.delete cs
         end
       end
+      
+      # Now we re-sync all
+      sync_databases
     end
 
     # Kills the connection listening for updates on this shard
@@ -175,8 +182,15 @@ module Adhd
     #       any changes have been pushed. The DELETE the database
     #       to save space
     def remove_content_shard content_shard, connection
-      connection.kill
-      content_shard.sync
+        success = content_shard.sync true
+        if success
+          puts "DELETE OLD SHARD #{content_shard.this_shard.shard_db_name}"
+          connection.kill Proc.new { content_shard.this_shard.delete! }
+        else
+          puts "DID NOT MANAGE TO SYNC #{content_shard.this_shard.shard_db_name} BEFORE KILL"        
+        end
+        
+        
     end
 
     # Enters the eventmachine loop
@@ -216,7 +230,7 @@ module Adhd
       @srdb.sync # SYNC
 
       @contentdbs.each_key do |cs|
-        @contentdbs[cs][0].sync
+        @contentdbs[cs][0].sync true
       end
     end
 

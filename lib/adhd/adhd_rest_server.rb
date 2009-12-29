@@ -16,7 +16,7 @@ require 'webrick'
   def post_init
      # We have opened a connection to the DB server, so now it is time
      # to send the initial Couch request, using HTTP 1.0.  
-     puts "Send request: #{@init_request}"
+     # puts "Send request: #{@init_request}"
      send_data @init_request
   end
   
@@ -191,7 +191,7 @@ require 'webrick'
     request = "GET /#{dbname}/#{docid}/#{@our_doc[:doc].filename} HTTP/1.0\r\n\r\n"
     #send_data request
     #close_connection_after_writing
-    puts "Connect to #{server_addr} port #{server_port}"
+    # puts "Connect to #{server_addr} port #{server_port}"
     conn = EM::connect server_addr, server_port, ProxyToServer, self, request
     EM::enable_proxy proxy_conn, self, 1024    
   end
@@ -224,7 +224,7 @@ require 'webrick'
     request += @buffer
     #send_data request
     #close_connection_after_writing
-    puts "Connect to #{server_addr} port #{server_port}"
+    # puts "Connect to #{server_addr} port #{server_port}"
     conn = EM::connect server_addr, server_port, ProxyToServer, self, request
     EM::enable_proxy self, proxy_conn, 1024  
   end
