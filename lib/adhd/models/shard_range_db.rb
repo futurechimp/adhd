@@ -122,8 +122,11 @@ class ShardRangeDB
         success = {:ok => true, :doc => content_doc, :db => remote_content_shard.this_shard_db}
         break
       rescue RestClient::RequestFailed => rf
+      
         if rf.http_code == 409
+          debugger
           puts "Document already there"
+          puts rf.to_json
           return {:ok => false , :reason => "Document already in database"}
         end
       rescue Exception =>e

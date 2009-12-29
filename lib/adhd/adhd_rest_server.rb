@@ -70,9 +70,6 @@ require 'webrick'
         @req = WEBrick::HTTPRequest.new(@web_config)
         @res = WEBrick::HTTPResponse.new(@web_config)
 
-
-        puts @res.to_s
-
         StringIO.open(header_data, 'rb') do |socket|
           @req.parse(socket)
         end
@@ -109,9 +106,8 @@ require 'webrick'
         #       A deferable object, or some other connection, not to block.
         #       Right now we are blocking and it sucks.
 
-        # Now get or write the document associated with this file
+        # Now get or write the document associated with this file        
         
-        #EM.defer {
         if @req.request_method == "GET"
 
           @our_doc = @node_manager.srdb.get_doc_directly(@req.header["ID"])
@@ -148,38 +144,6 @@ require 'webrick'
             close_connection
           end
         end
-        #}
-
-        # Now send the reply as an HTTP1.0 reponse
-
-        # HTTP/1.0 200 OK
-        # Date: Fri, 08 Aug 2003 08:12:31 GMT
-        # Server: Apache/1.3.27 (Unix)
-        # MIME-version: 1.0
-        # Last-Modified: Fri, 01 Aug 2003 12:45:26 GMT
-        # Content-Type: text/html
-        # Content-Length: 2345
-        # ** a blank line *
-        # <HTML> ...
-
-
-
-      # response = @our_doc.to_s
-      #
-      # send_data "HTTP/1.0 200 OK\r\n"
-      # send_data "Content-Type: text/plain\r\n"
-      # send_data "Content-Length: #{response.length}\r\n"
-      # send_data "\r\n"
-      # send_data response
-      #
-      # # Close the connection
-      # close_connection_after_writing
-
-     end
-
-     # We have the header and the node, and now we execute the request
-     if @status == :execute_request
-
      end
 
    end
@@ -193,10 +157,11 @@ require 'webrick'
 
     docid = @our_doc[:doc]._id
     dbname = @our_doc[:db].name
-    request = "GET /#{dbname}/#{docid}/#{@our_doc[:doc].filename} HTTP/1.0\r\n\r\n"
+    request = "GET /#{dbname}/#{docid}/#{@our_doc[:doc].filename} HTTP/1.0\r\n\r\n"    
     #send_data request
     #close_connection_after_writing
-    # puts "Connect to #{server_addr} port #{server_port}"
+    puts "Connect to #{server_addr} port #{server_port}"
+    puts "#{request}"
     conn = EM::connect server_addr, server_port, ProxyToServer, self, request
     EM::enable_proxy proxy_conn, self, 1024*10
   end
@@ -210,7 +175,6 @@ require 'webrick'
     # Response to a PUT request only
     send_data data
   end
-
 
   def handle_put
     resume

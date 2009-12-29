@@ -146,10 +146,11 @@ class Node  < CouchRest::ExtendedDocument
       return true
     rescue Exception => e
       # INSERT DEBUGGER HERE
-      raise e
+      
       # Other node turns out to be unavailable
       other_node.status = "UNAVAILABLE"
       other_node.save
+      
       return false
     end
 
