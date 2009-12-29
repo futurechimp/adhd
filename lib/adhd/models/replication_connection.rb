@@ -53,6 +53,7 @@ module  Adhd
     def unbind
       # TODO: detect when the remote node is down and update their 
       #       status
+      @conn_obj.unbind
     end
 
   end
@@ -86,11 +87,11 @@ module  Adhd
 
     def start
     
-      puts "Registering the replication connection for: #{@db_name}"
+      # puts "Registering the replication connection for: #{@db_name}"
       node_uri = URI.parse(our_node.url)
       
       begin
-        puts "Connecting to #{node_uri.host}:#{node_uri.port}"
+        # puts "Connecting to #{node_uri.host}:#{node_uri.port}"
         EM.connect node_uri.host, node_uri.port, Adhd::ReplicationNotifier, self
         @status = "RUNNING"
       rescue Exception => e
@@ -98,6 +99,11 @@ module  Adhd
         puts "PROBLEM: #{e.message}"
         throw e
       end
+    end
+    
+    def unbind
+      @status = "NOTRUNNING"
+      @event_block.call(:end, nil)
     end
 
     def event_handler data

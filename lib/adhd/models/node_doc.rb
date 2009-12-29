@@ -4,6 +4,48 @@
 #
 # TODO: ditch the "get_" stuff, we're not writing C# here.
 #
+
+require File.dirname(__FILE__) + '/replication_connection'
+
+# We need to centralise the management of replication
+# connections to make sure that we do not call one when it is not necessary
+#
+# A replication manager keeps track of how often we have been replicating
+# a db and ensure replications do not happen too often.
+class ReplicationManager
+
+  def initialize interval
+    @interval = interval
+    @schedule = {}    
+    @active = false
+  end
+  
+  def add_replication conn
+     
+    if @schedule.has_key? conn.name
+      return
+    else 
+      @schedule[conn.name] = conn
+      
+      if !@active
+        @active = true
+        EM::add_timer(@interval) { run_replications }
+      end    
+    end        
+  end
+  
+  def run_replications
+      # Add fresh schedule
+      old_shedule = @schedule
+      @schedule = {}
+      @active = false
+      
+      old_shedule.each_value do |conn|
+        conn.start
+      end
+  end
+end
+
 class Node  < CouchRest::ExtendedDocument
   unique_id :name
 
@@ -40,32 +82,57 @@ class Node  < CouchRest::ExtendedDocument
   # databases, and only do a replication after some time lapses.
 
   def replicate_to(local_db, other_node, remote_db)
-    replicate_to_or_from(local_db, other_node, remote_db, true)
+    replicate_to_or_from_async(local_db, other_node, remote_db, true)
   end
 
   def replicate_from(local_db, other_node, remote_db)
-    replicate_to_or_from(local_db, other_node, remote_db, false)
+    replicate_to_or_from_async(local_db, other_node, remote_db, false)
   end
 
   private
+
+  @@replication_manager = ReplicationManager.new(2)
+
 
   # Replicates to or from a management node database.  The direction of
   # replication is controlled by a boolean property.
   #
   # Returns true if replication succeeds, false if not.
   #
-  def replicate_to_or_from(local_db, other_node, remote_db, to = true)
+  def replicate_to_or_from_async(local_db, other_node, remote_db, to = true)
     # Do not try to contact unavailable nodes
     return false if other_node.status == "UNAVAILABLE"
     # No point replicating to ourselves
     return false if (name == other_node.name)
 
+    # Define a call back
+    endconn = Proc.new do |ev, data|       
+        if ev == :rec
+          #puts "DID Sync #{local_db.name} from to #{other_node.name}: #{data}"
+        else
+          #puts "END Sync #{local_db.name} from to #{other_node.name}"
+        end
+    end
+
     begin
       # Replicate to other node is possible
       if to
-        remote_db.replicate_from(local_db)
+        if EM::reactor_running?()
+          conn = Adhd::ReplicationConnection.new other_node, remote_db, 
+                                                  self, local_db, endconn 
+          @@replication_manager.add_replication conn
+        else
+          remote_db.replicate_from(local_db)
+        end  
+                
       else
-        local_db.replicate_from(remote_db)
+        if EM::reactor_running?()
+          conn = Adhd::ReplicationConnection.new self, local_db, other_node, 
+                                                 remote_db, endconn
+          @@replication_manager.add_replication conn
+        else
+          local_db.replicate_from(remote_db)
+        end
       end
       return true
     rescue Exception => e
@@ -76,6 +143,7 @@ class Node  < CouchRest::ExtendedDocument
     end
 
   end
+
 
 
 end
