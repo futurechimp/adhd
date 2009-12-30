@@ -4,7 +4,7 @@ require 'couchrest'
 
 require 'test/unit'
 require 'shoulda'
-require File.dirname(__FILE__) + '/../../lib/adhd/models/replication_connection'
+require File.dirname(__FILE__) + '/../../lib/adhd/replication_connection'
 require File.dirname(__FILE__) + '/../../lib/adhd/models/node'
 
 class TestReplicationConnection <  Test::Unit::TestCase
