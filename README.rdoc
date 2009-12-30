@@ -2,6 +2,11 @@
 
 Adhd is an asynchronous, distributed hard drive.  Actually we're not sure if it's really asynchronous or even what asynchronicity would mean in the context of a hard drive, but it is definitely distributed.  Adhd is essentially a management layer (written using Ruby and eventmachine) which controls clusters of CouchDB databases to replicate files across disparate machines.  Unlike most clustering storage solutions, adhd assumes that machines in the cluster may have different capabilities and is designed to work both inside and outside the data centre.
 
+== Current status
+
+It's a work in progress.  The docs suck, the latest code from Github may or may not work at all, we're still feeling our way forward on how to write tests for a distributed system, and not all features work.  On the other hand, it is possible to install a ruby gem, start several nodes, add files to the system, and see them replicate across nodes.  Performance optimizations and some of the more advanced sharding features are the main missing things;  the software does more or less work at present although we wouldn't use it in production yet.  It's alpha.
+
+Someone told us recently, "if you're not ashamed of your code, you're not releasing early enough."  The shame we feel hopefully indicates that the decision to start coding on Github from day 1 was ideologically correct in an agile world.
 
 == How it works
 
