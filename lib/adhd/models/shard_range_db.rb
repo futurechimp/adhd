@@ -115,7 +115,7 @@ class ShardRangeDb
 
         # Do not contact unavailable nodes
         next if remote_node.status == "UNAVAILABLE"
-        remote_ndb = NodeDB.new(remote_node)
+        remote_ndb = NodeDb.new(remote_node)
 
         remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
         remote_content_shard.this_shard_db.save_doc(content_doc)
@@ -124,13 +124,13 @@ class ShardRangeDb
       rescue RestClient::RequestFailed => rf
 
         if rf.http_code == 409
-          debugger
           puts "Document already there"
           puts rf.to_json
           return {:ok => false , :reason => "Document already in database"}
         end
       rescue Exception =>e
-        puts "Could not put doc in node #{node} because of #{rf}"
+        puts "Could not put doc in node #{node} because of #{e}"
+        
         # TODO: change status or chose another management server
         remote_node.status = "UNAVAILABLE"
         remote_node.save
@@ -149,7 +149,7 @@ class ShardRangeDb
       # Try to write the doc to this node
       begin
         remote_node = Node.by_name(:key => node).first
-        remote_ndb = NodeDB.new(remote_node)
+        remote_ndb = NodeDb.new(remote_node)
         remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
 
         docx = ContentDoc.by_internal_id(:key => internal_id, :database => remote_content_shard.this_shard_db)
