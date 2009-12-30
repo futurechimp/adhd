@@ -1,12 +1,11 @@
 module  Adhd
-  module Notifiers
-    module Replication
+  module Replication
+    module Notifier
 
       def initialize(conn_obj)
         @conn_obj = conn_obj
         @buffer = ""
         conn_obj.connection_inside = self # We tell the outer object who we are
-        # pending_connect_timeout= 5.0
       end
 
       # Makes a long-running request to a CouchDB instance
@@ -30,10 +29,9 @@ module  Adhd
       end
 
       # Shoots replication events from CouchDB to the @conn.
-      # Buffers data until a JSON object is detected
+      # Buffers data until a JSON object is detected.
       #
       def receive_data data
-
         @buffer += data # Add the data to the current buffer
         updates = []
         if @buffer =~ /(\{[^\n]+\}\n)/
@@ -48,9 +46,9 @@ module  Adhd
         end
       end
 
+      # TODO: detect when the remote node is down and update their status.
+      #
       def unbind
-        # TODO: detect when the remote node is down and update their
-        #       status
         @conn_obj.unbind
       end
 

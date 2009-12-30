@@ -1,12 +1,12 @@
 require 'rubygems'
 require 'couchrest'
 require 'ruby-debug'
-require File.dirname(__FILE__) + '/models/node'
-require File.dirname(__FILE__) + '/models/node_db'
-require File.dirname(__FILE__) + '/models/stored_file'
-require File.dirname(__FILE__) + '/models/shard_range'
-require File.dirname(__FILE__) + '/models/shard_range_db'
-require File.dirname(__FILE__) + '/models/content_shard'
+require File.dirname(__FILE__) + '/node'
+require File.dirname(__FILE__) + '/node_db'
+require File.dirname(__FILE__) + '/../storage/stored_file'
+require File.dirname(__FILE__) + '/shard_range'
+require File.dirname(__FILE__) + '/shard_range_db'
+require File.dirname(__FILE__) + '/../storage/storage_shard'
 
 module Adhd
   class NodeManager

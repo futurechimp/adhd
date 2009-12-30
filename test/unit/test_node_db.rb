@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
-require File.dirname(__FILE__) + '/../../lib/adhd/models/node_db'
+require File.dirname(__FILE__) + '/../../lib/adhd/cluster/node_db'
 require File.dirname(__FILE__) + '/../support/node'
 require File.dirname(__FILE__) + '/../support/node_db'
 

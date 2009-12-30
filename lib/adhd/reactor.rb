@@ -180,14 +180,11 @@ module  Adhd
     def run_all
       @our_connections.each do |c|
         if c.is_closed? or !c.keep_alive?
-          #puts "Actually rerun #{c.db_name}..."
           rerun(c)
         end
       end
-
     end
 
   end
-
 end
 

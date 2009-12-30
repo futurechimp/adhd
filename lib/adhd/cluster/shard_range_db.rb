@@ -98,7 +98,7 @@ class ShardRangeDb
     ShardRange.by_node(:key => our_node.name).each do |s|
 
       # Build a content shard object
-      content_shards[s.shard_db_name] = ContentShard.new(nodes, s)
+      content_shards[s.shard_db_name] = StorageShard.new(nodes, s)
     end
     puts "Content shards #{content_shards.length}"
     content_shards
@@ -117,7 +117,7 @@ class ShardRangeDb
         next if remote_node.status == "UNAVAILABLE"
         remote_ndb = NodeDb.new(remote_node)
 
-        remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
+        remote_content_shard = StorageShard.new(remote_ndb, doc_shard)
         remote_content_shard.this_shard_db.save_doc(content_doc)
         success = {:ok => true, :doc => content_doc, :db => remote_content_shard.this_shard_db}
         break
@@ -149,7 +149,7 @@ class ShardRangeDb
       begin
         remote_node = Node.by_name(:key => node).first
         remote_ndb = NodeDb.new(remote_node)
-        remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
+        remote_content_shard = StorageShard.new(remote_ndb, doc_shard)
 
         docx = ContentDoc.by_internal_id(:key => internal_id, :database => remote_content_shard.this_shard_db)
         if docx.length > 0
