@@ -20,7 +20,6 @@ module  Adhd
     # Makes a long-running request to a CouchDB instance's _changes URL.
     #
     def post_init
-      # NOTE: full domain name needed for virtual hosting
       req = "GET #{@conn_obj.base_url}/#{@db_name}/_changes?feed=continuous&heartbeat=5000\r\n\r\n"
       puts req
       send_data req
@@ -29,9 +28,6 @@ module  Adhd
     # Shoots update notifications from CouchDB to the @conn.
     #
     def receive_data data
-      # puts "received_data: #{data}"
-      # puts "||#{data}||length=#{data.length}||#{data.dump}||"
-
       @buffer += data # Add the data to the current buffer
       updates = []
       if @buffer =~ /(\{[^\n]+\}\n)/
