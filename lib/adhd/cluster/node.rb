@@ -1,5 +1,5 @@
-require File.dirname(__FILE__) + '/../replication_connection'
-require File.dirname(__FILE__) + '/../replication_manager'
+require File.dirname(__FILE__) + '/../replication/connection'
+require File.dirname(__FILE__) + '/../replication/manager'
 
 # An adhd management node containing information about the cluster.
 #
@@ -51,7 +51,7 @@ class Node  < CouchRest::ExtendedDocument
 
   private
 
-  @@replication_manager = Adhd::ReplicationManager.new(2)
+  @@replication_manager = Adhd::Replication::Manager.new(2)
 
 
   # Replicates to or from a management node database.  The direction of
@@ -59,7 +59,7 @@ class Node  < CouchRest::ExtendedDocument
   #
   # Returns true if replication succeeds, false if not.
   #
-  def replicate_to_or_from_async(local_db, other_node, remote_db, to = true, now=true)
+  def replicate_to_or_from_async(local_db, other_node, remote_db, to=true, now=true)
     # Do not try to contact unavailable nodes
 
     return false if other_node.status == "UNAVAILABLE"
@@ -79,7 +79,7 @@ class Node  < CouchRest::ExtendedDocument
       # Replicate to other node is possible
       if to
         if !now && EM::reactor_running?()
-          conn = Adhd::ReplicationConnection.new other_node, remote_db,
+          conn = Adhd::Replication::Connection.new other_node, remote_db,
                                                   self, local_db, endconn
           @@replication_manager.add_replication conn
         else
@@ -88,7 +88,7 @@ class Node  < CouchRest::ExtendedDocument
 
       else
         if !now && EM::reactor_running?()
-          conn = Adhd::ReplicationConnection.new self, local_db, other_node,
+          conn = Adhd::Replication::Connection.new self, local_db, other_node,
                                                  remote_db, endconn
           @@replication_manager.add_replication conn
         else
@@ -97,7 +97,7 @@ class Node  < CouchRest::ExtendedDocument
       end
       return true
     rescue Exception => e
-      
+      # INSERT DEBUGGER HERE
       # Other node turns out to be unavailable
       other_node.status = "UNAVAILABLE"
       other_node.save
@@ -106,8 +106,5 @@ class Node  < CouchRest::ExtendedDocument
     end
 
   end
-
-
-
 end
 

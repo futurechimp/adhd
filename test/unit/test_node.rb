@@ -2,8 +2,8 @@ require 'rubygems'
 require 'test/unit'
 require 'shoulda'
 require 'couchrest'
+require File.dirname(__FILE__) + '/../../lib/adhd/cluster/node'
 require 'eventmachine'
-require File.dirname(__FILE__) + '/../../lib/adhd/models/node'
 
 # A db that always pretends to copy a db
 #

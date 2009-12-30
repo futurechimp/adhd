@@ -1,24 +1,24 @@
-# Models a CouchDB database which holds ShardRange documents.
+# Models a CouchDB database which holds ShardRanges.
 #
 class ShardRangeDb
 
   attr_accessor :nodes, :local_shard_db, :our_node
 
-  def initialize(nodesv)
-    @nodes = nodesv
+  def initialize(nodes)
+    @nodes = nodes
 
     # Automatically get our shard_db address from our own node name
-    @our_node = nodesv.our_node
-    @local_shard_db = nodesv.our_node.get_shard_db
+    @our_node = @nodes.our_node
+    @local_shard_db = @nodes.our_node.get_shard_db
 
     puts "Assign default database for shard ranges (#{@local_shard_db})"
     ShardRange.use_database @local_shard_db
   end
 
+  # We replicate our state from the management node(s)
+  # We never push content if we are only storage
+  #
   def sync
-
-    # We replicate our state from the management node(s)
-    # We never push content if we are only storage
     management_nodes = Node.by_is_management.reverse
 
     # NOTE: randomize the order for load balancing here
@@ -98,7 +98,7 @@ class ShardRangeDb
     ShardRange.by_node(:key => our_node.name).each do |s|
 
       # Build a content shard object
-      content_shards[s.shard_db_name] = ContentShard.new(nodes, s)
+      content_shards[s.shard_db_name] = StorageShard.new(nodes, s)
     end
     puts "Content shards #{content_shards.length}"
     content_shards
@@ -117,7 +117,7 @@ class ShardRangeDb
         next if remote_node.status == "UNAVAILABLE"
         remote_ndb = NodeDb.new(remote_node)
 
-        remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
+        remote_content_shard = StorageShard.new(remote_ndb, doc_shard)
         remote_content_shard.this_shard_db.save_doc(content_doc)
         success = {:ok => true, :doc => content_doc, :db => remote_content_shard.this_shard_db}
         break
@@ -130,7 +130,6 @@ class ShardRangeDb
         end
       rescue Exception =>e
         puts "Could not put doc in node #{node} because of #{e}"
-        
         # TODO: change status or chose another management server
         remote_node.status = "UNAVAILABLE"
         remote_node.save
@@ -150,7 +149,7 @@ class ShardRangeDb
       begin
         remote_node = Node.by_name(:key => node).first
         remote_ndb = NodeDb.new(remote_node)
-        remote_content_shard = ContentShard.new(remote_ndb, doc_shard)
+        remote_content_shard = StorageShard.new(remote_ndb, doc_shard)
 
         docx = ContentDoc.by_internal_id(:key => internal_id, :database => remote_content_shard.this_shard_db)
         if docx.length > 0

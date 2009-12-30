@@ -4,8 +4,9 @@ require 'couchrest'
 
 require 'test/unit'
 require 'shoulda'
-require File.dirname(__FILE__) + '/../../lib/adhd/models/replication_connection'
-require File.dirname(__FILE__) + '/../../lib/adhd/models/node'
+require File.dirname(__FILE__) + '/../../lib/adhd/replication/connection'
+require File.dirname(__FILE__) + '/../../lib/adhd/replication/notifier'
+require File.dirname(__FILE__) + '/../../lib/adhd/cluster/node'
 
 class TestReplicationConnection <  Test::Unit::TestCase
 
@@ -35,7 +36,7 @@ class TestReplicationConnection <  Test::Unit::TestCase
         # Stop the event machine
         EM::stop_event_loop()
       end
-      conn = Adhd::ReplicationConnection.new @node1, @node1_db, @node2, @node2_db, endconn
+      conn = Adhd::Replication::Connection.new @node1, @node1_db, @node2, @node2_db, endconn
       @node2_db.save_doc(@node2)
       @node2_db.save_doc(@node1)
 
@@ -61,7 +62,7 @@ class TestReplicationConnection <  Test::Unit::TestCase
       nonexistent_node.name = "a_nonexistent_node"
       nonexistent_node.url = "http://some.nonexistent.node"
       nonexistent_node_db = nonexistent_node.get_node_db
-      conn = Adhd::ReplicationConnection.new @node1, @node1_db, nonexistent_node, nonexistent_node_db, endconn
+      conn = Adhd::Replication::Connection.new @node1, @node1_db, nonexistent_node, nonexistent_node_db, endconn
 
       EM::run {
         begin
@@ -88,7 +89,7 @@ class TestReplicationConnection <  Test::Unit::TestCase
       nonexistent_node.name = "a_nonexistent_node"
       nonexistent_node.url = "http://some.nonexistent.node:9999"
       nonexistent_node_db = nonexistent_node.get_node_db
-      conn = Adhd::ReplicationConnection.new nonexistent_node, nonexistent_node_db, @node2, @node2_db, endconn
+      conn = Adhd::Replication::Connection.new nonexistent_node, nonexistent_node_db, @node2, @node2_db, endconn
 
       EM::run {
         begin

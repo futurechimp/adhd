@@ -1,6 +1,6 @@
-# Models a CouchDB database which contains lots and lots of ContentDoc objects.
+# Models a CouchDB database which contains lots and lots of StoredFile objects.
 #
-class ContentShard
+class StorageShard
 
   attr_accessor :nodes, :this_shard, :our_node, :this_shard_db
 
@@ -19,20 +19,22 @@ class ContentShard
      internal_id >= this_shard.range_start && internal_id < this_shard.range_end
   end
 
+  # Write a content document to this shard
+  # Make sure it is in this shard
+  #
   def write_doc(content_doc)
-    # Write a content document to this shard
-    # Make sure it is in this shard
     if in_shard? content_doc.internal_id
       this_shard_db.save_doc(content_doc)
     end
   end
 
+  # A Shard only pushes with the master of the shard
+  # or the node with the highest is_storage value alive
+  # Shard masters ensure changes are pushed to all
+  #
+  # TODO: This method needs serious refactoring
+  #
   def sync all = false
-    # A Shard only pushes with the master of the shard
-    # or the node with the highest is_storage value alive
-    # Shard masters ensure changes are pushed to all
-
-    # NOTE: This method needs serious refactoring
     # No need to update
     return false if !all and @this_shard_db.info['update_seq'] == @last_sync_seq
 

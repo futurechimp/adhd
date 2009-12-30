@@ -4,11 +4,11 @@ require 'ftools'
 require 'yaml'
 
 require File.dirname(__FILE__) + '/../lib/ext/hash_to_openstruct'
-require File.dirname(__FILE__) + '/../lib/adhd/node_manager'
+require File.dirname(__FILE__) + '/../lib/adhd/cluster/node_manager'
 require File.dirname(__FILE__) + '/../lib/adhd/reactor'
 require File.dirname(__FILE__) + '/../lib/adhd/rest_server'
-require File.dirname(__FILE__) + '/../lib/adhd/replication_connection'
-require File.dirname(__FILE__) + '/../lib/adhd/notifiers/replication'
+require File.dirname(__FILE__) + '/../lib/adhd/replication/connection'
+require File.dirname(__FILE__) + '/../lib/adhd/replication/notifier'
 
 def parse_config(file)
   @config = YAML.load_openstruct(File.read(file))
