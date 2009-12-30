@@ -4,9 +4,11 @@ Adhd is an asynchronous, distributed hard drive.  Actually we're not sure if it'
 
 == Current status
 
-It's a work in progress.  The docs suck, the latest code from Github may or may not work at all, we're still feeling our way forward on how to write tests for a distributed system, and not all features work.  On the other hand, it is possible to install a ruby gem, start several nodes, add files to the system, and see them replicate across nodes.  Performance optimizations and some of the more advanced sharding features are the main missing things;  the software does more or less work at present although we wouldn't use it in production yet.  It's alpha.
-
 Someone told us recently, "if you're not ashamed of your code, you're not releasing early enough."  The shame we feel hopefully indicates that the decision to start coding on Github from day 1 was ideologically correct in an agile world.
+
+So, adhd is aggressively alpha.  The docs suck, the latest code from Github may or may not work at all, we're still feeling our way forward on how to write tests for a distributed system, and not all features work.  On the other hand, it is possible to install a ruby gem, start several nodes, add files to the system, and see them replicate across nodes.  Performance optimizations and some of the more advanced sharding features are the main missing things;  the software does sometimes work at present.
+
+The big recent triumph is that we have acheived "jellyfish" status, one of our design goals. We uploaded a bunch of 60MB files, watched replication happen, then cut the connection between several parts of the cluster and uploaded more files.  When the connection between the pieces of the system was restored, content replicated properly throughout the nodes and the system recombined into a single cluster once again.
 
 == How it works
 
