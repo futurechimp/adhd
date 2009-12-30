@@ -1,4 +1,4 @@
-# Models a CouchDB database which contains lots and lots of ContentDoc objects.
+# Models a CouchDB database which contains lots and lots of StoredFile objects.
 #
 class ContentShard
 
