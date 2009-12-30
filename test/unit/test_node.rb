@@ -3,6 +3,7 @@ require 'test/unit'
 require 'shoulda'
 require 'couchrest'
 require File.dirname(__FILE__) + '/../../lib/adhd/cluster/node'
+require 'eventmachine'
 
 # A db that always pretends to copy a db
 #
@@ -15,7 +16,7 @@ module FakeDb
     @target = t
   end
 
-  def replicate_from target
+  def replicate_from t
     @target = t
   end
 end
@@ -31,8 +32,8 @@ module BlowDb
     throw Exception.new
   end
 
-  def replicate_from target
-    @target = t
+  def replicate_from t
+    throw Exception.new
   end
 
 end
@@ -98,23 +99,18 @@ class TestNode <  Test::Unit::TestCase
       end
 
       should "copy databases across" do
-        @node.replicate_to(@local_db, @other_node, "TARGET")
+        @node.replicate_to("TARGET", @other_node, @local_db)
         assert @local_db.get_target && @local_db.get_target == "TARGET"
       end
 
       should "not copy to same node" do
-        assert !@node.replicate_to(@local_db, @node, "TARGET")
-        assert !@local_db.get_target # Has not copied anything indeed
-      end
-
-      should "not copy to same node" do
-        assert !@node.replicate_to(@local_db, @node, "TARGET")
+        assert !@node.replicate_to("TARGET", @node, @local_db)
         assert !@local_db.get_target # Has not copied anything indeed
       end
 
       should "not copy to unavailable nodes" do
         @other_node.status = "UNAVAILABLE"
-        assert !@node.replicate_to(@local_db, @other_node, "TARGET")
+        assert !@node.replicate_to("TARGET", @other_node, @local_db)
         assert !@local_db.get_target # Has not copied anything indeed
       end
 
@@ -130,7 +126,7 @@ class TestNode <  Test::Unit::TestCase
         end
         fake_node = fake_node_klass.new
 
-        assert !@node.replicate_to(@local_blow_db, fake_node, "TARGET")
+        assert !@node.replicate_to("TARGET", fake_node, @local_blow_db)
         assert fake_node.status == "UNAVAILABLE"
         assert fake_node.saved
       end
