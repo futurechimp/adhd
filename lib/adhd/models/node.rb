@@ -1,60 +1,12 @@
+require File.dirname(__FILE__) + '/../replication_connection'
+require File.dirname(__FILE__) + '/../replication_manager'
+
 # An adhd management node containing information about the cluster.
-#
-# TODO: rename this file to "node.rb" instead of  "node_doc.rb"
 #
 # TODO: ditch the "get_" stuff, we're not writing C# here.
 #
-
-require File.dirname(__FILE__) + '/replication_connection'
-
-# We need to centralise the management of replication
-# connections to make sure that we do not call one when it is not necessary
-#
-# A replication manager keeps track of how often we have been replicating
-# a db and ensure replications do not happen too often. Internally the manager
-# keeps track of pending replication connections, and activates / executes
-# them within a period of time set as an interval. If replication between two
-# resources is requested multiple times it is only perfomed once.
-class ReplicationManager
-
-  def initialize interval
-    @interval = interval
-
-    # A hash of replication connections by name, pending execution
-    @schedule = {}
-    @active = false
-  end
-
-  # Add a replication connection to the replication shedule
-  # If the same replication is already scheduled it will only happen once.
-  def add_replication conn
-
-    if @schedule.has_key? conn.name
-      return
-    else
-      @schedule[conn.name] = conn
-
-      if !@active
-        @active = true
-        EM::add_timer(@interval) { run_replications }
-      end
-    end
-  end
-
-  # Run all the replications requested, and start a new schedule
-  def run_replications
-      # Add fresh schedule
-      old_shedule = @schedule
-      @schedule = {}
-      @active = false
-
-      old_shedule.each_value do |conn|
-        conn.start
-      end
-  end
-end
-
 class Node  < CouchRest::ExtendedDocument
+
   unique_id :name
 
   property :name
@@ -99,7 +51,7 @@ class Node  < CouchRest::ExtendedDocument
 
   private
 
-  @@replication_manager = ReplicationManager.new(2)
+  @@replication_manager = Adhd::ReplicationManager.new(2)
 
 
   # Replicates to or from a management node database.  The direction of
@@ -146,11 +98,11 @@ class Node  < CouchRest::ExtendedDocument
       return true
     rescue Exception => e
       # INSERT DEBUGGER HERE
-      
+
       # Other node turns out to be unavailable
       other_node.status = "UNAVAILABLE"
       other_node.save
-      
+
       return false
     end
 

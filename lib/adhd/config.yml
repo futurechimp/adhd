@@ -1,7 +1,8 @@
 ---
-    node_name: superfoo
-    node_url: "192.168.1.104"
+    node_name: my_node
+    node_url: localhost
     couchdb_server_port: 5984
-    buddy_server_url: "http://192.168.1.104:5984" # It is a good idea if this is a management node
-    buddy_server_db_name: foo
+    http_server_port: 5985
+    buddy_server_url: "http://some.couch.server:5984"
+    buddy_server_node_name: my_buddy
 

@@ -2,7 +2,7 @@
 # to create thousands of real CouchDb databases on disk, which would be slow
 # and suck.
 #
-class FakeAssNodeDb < NodeDB
+class FakeAssNodeDb < NodeDb
 
   # Returns a list of FakeAssNode management nodes.
   #

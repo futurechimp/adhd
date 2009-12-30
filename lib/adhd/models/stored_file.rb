@@ -1,7 +1,7 @@
 # Models a CouchDB document containing a single file attachment with a bit of
 # metadata about the file.
 #
-class ContentDoc < CouchRest::ExtendedDocument
+class StoredFile < CouchRest::ExtendedDocument
 
   property :_id
   property :internal_id

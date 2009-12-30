@@ -3,9 +3,13 @@ require 'uri'
 require 'net/http'
 require 'webrick'
 
- module ProxyToServer
-  # This implements the connection that proxies an incoming file to to the
-  # respective CouchDB instance, as an attachment.
+# This implements the connection that proxies an incoming file to a
+# CouchDB instance, as an attachment.  We stream incoming files so that
+# we don't need to buffer them in memory (which would be psychotic for large
+# files) or write them to disk as temp storage (eating up disk space and
+# causing lag).
+#
+module CouchStreamerProxy
 
   def initialize our_client_conn, init_request
     @our_client_conn = our_client_conn
@@ -13,9 +17,10 @@ require 'webrick'
     our_client_conn.proxy_conn = self
   end
 
+  # We have opened a connection to the CouchDB server, so now it is time
+  # to send the initial Couch request, using HTTP 1.0.
+  #
   def post_init
-     # We have opened a connection to the DB server, so now it is time
-     # to send the initial Couch request, using HTTP 1.0.
      send_data @init_request
   end
 
@@ -27,9 +32,10 @@ require 'webrick'
     @our_client_conn.proxy_unbind
   end
 
- end
+end
 
- module AdhdRESTServer
+module AdhdRESTServer
+
   attr_accessor :proxy_conn
 
   def initialize node_manager
@@ -49,22 +55,22 @@ require 'webrick'
   # Content-Type: image/jpeg
   #
   # <JPEG data>
-
-   def receive_data data
+  #
+  def receive_data data
 
      # First we get all the headers in to find out which resource
      # we are looking for.
 
-     if @status == :header
-       @buffer += data
+    if @status == :header
+      @buffer += data
 
-       if data =~ /\r\n\r\n/
+      if data =~ /\r\n\r\n/
 
         # Detected end of headers
         header_data = @buffer[0...($~.begin(0))]
 
-       @web_config = WEBrick::Config::HTTP.clone
-       @web_config[:HTTPVersion] = WEBrick::HTTPVersion.new("1.0")
+        @web_config = WEBrick::Config::HTTP.clone
+        @web_config[:HTTPVersion] = WEBrick::HTTPVersion.new("1.0")
 
         # Try the webrick parser
         @req = WEBrick::HTTPRequest.new(@web_config)
@@ -88,43 +94,42 @@ require 'webrick'
 
         # Change the status once headers are found
         @status = :find_node
-       else
+      else
         # Avoid DoS via buffer filling
         close_connection if @buffer.length > 1000
-       end
+      end
+    end
 
-     end
-
-     # Now we have the headers, but maybe not the full body, and we are looking
-     # for the right node in our network to handle the call.
-     if @status == :find_node
-        pause # We want to tell the remote host to wait a bit
-              # This would allow us to defer the execution of the calls to find
-              # the right nodes, and extract the doc.
+    # Now we have the headers, but maybe not the full body, and we are looking
+    # for the right node in our network to handle the call.
+    if @status == :find_node
+      pause # We want to tell the remote host to wait a bit
+            # This would allow us to defer the execution of the calls to find
+            # the right nodes, and extract the doc.
 
         # TODO: We need to push all the chit-chat with the remote servers to
         #       A deferable object, or some other connection, not to block.
         #       Right now we are blocking and it sucks.
 
-        # Now get or write the document associated with this file        
-        
-        if @req.request_method == "GET"
+        # Now get or write the document associated with this file
 
-          @our_doc = @node_manager.srdb.get_doc_directly(@req.header["ID"])
+      if @req.request_method == "GET"
 
-          # TODO: handle erros if file does not exist
-          if @our_doc[:ok]
-            @status == :get
+        @our_doc = @node_manager.srdb.get_doc_directly(@req.header["ID"])
+
+        # TODO: handle errors if file does not exist
+        if @our_doc[:ok]
+          @status == :get
             handle_get
           else
             send_data "Problem"
             close_connection
           end
         end
-        
+
         if @req.request_method == "PUT"
           # Define a Doc with the data so far
-          @our_doc = ContentDoc.new
+          @our_doc = StoredFile.new
 
           @our_doc._id = @req.header["ID"]
           @our_doc.internal_id = @req.header["ID"]
@@ -144,9 +149,8 @@ require 'webrick'
             close_connection
           end
         end
-     end
-
-   end
+      end
+    end
 
   def handle_get
     resume
@@ -157,12 +161,12 @@ require 'webrick'
 
     docid = @our_doc[:doc]._id
     dbname = @our_doc[:db].name
-    request = "GET /#{dbname}/#{docid}/#{@our_doc[:doc].filename} HTTP/1.0\r\n\r\n"    
+    request = "GET /#{dbname}/#{docid}/#{@our_doc[:doc].filename} HTTP/1.0\r\n\r\n"
     #send_data request
     #close_connection_after_writing
     puts "Connect to #{server_addr} port #{server_port}"
     puts "#{request}"
-    conn = EM::connect server_addr, server_port, ProxyToServer, self, request
+    conn = EM::connect server_addr, server_port, CouchStreamerProxy, self, request
     EM::enable_proxy proxy_conn, self, 1024*10
   end
 
@@ -194,7 +198,7 @@ require 'webrick'
     #send_data request
     #close_connection_after_writing
     # puts "Connect to #{server_addr} port #{server_port}"
-    conn = EM::connect server_addr, server_port, ProxyToServer, self, request
+    conn = EM::connect server_addr, server_port, CouchStreamerProxy, self, request
     EM::enable_proxy self, proxy_conn, 1024 * 10
   end
 

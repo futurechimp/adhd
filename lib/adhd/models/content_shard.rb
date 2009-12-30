@@ -1,6 +1,7 @@
 # Models a CouchDB database which contains lots and lots of ContentDoc objects.
 #
 class ContentShard
+
   attr_accessor :nodes, :this_shard, :our_node, :this_shard_db
 
   def initialize(nodesv, this_shardv)
@@ -69,11 +70,12 @@ class ContentShard
          #       We are doing some "gonzo" replication, here. Our master is
          #       clearly down so we find the second best node; we push our
          #       changes to this node, and now also *replicate from*
-         #       that node.         
+         #       that node.
          @last_sync_seq = @this_shard_db.info['update_seq']
          break
        end
     end
+
     if all_good
       @last_sync_seq = @this_shard_db.info['update_seq']
       return true
@@ -81,22 +83,6 @@ class ContentShard
       return false
     end
   end
-
-end
-
-class ContentDoc < CouchRest::ExtendedDocument
-  # NOTE: NO DEFAULT DATABASE IN THE OBJECT -- WE WILL BE STORING A LOT OF
-  # DATABASES OF THIS TYPE.
-
-  property :_id
-  property :internal_id
-  property :size_bytes
-  property :filename
-  property :mime_type
-
-  view_by :internal_id
-
-  # A special attachment "File" is expected to exist
 
 end
 

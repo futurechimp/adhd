@@ -1,13 +1,14 @@
 #!/usr/bin/env ruby
-require File.dirname(__FILE__) + '/../lib/ext/hash_to_openstruct'
-require File.dirname(__FILE__) + '/../lib/adhd/node_manager'
-require File.dirname(__FILE__) + '/../lib/adhd/reactor'
-require File.dirname(__FILE__) + '/../lib/adhd/adhd_rest_server'
-
 require 'optparse'
 require 'ftools'
 require 'yaml'
-# require 'socket'
+
+require File.dirname(__FILE__) + '/../lib/ext/hash_to_openstruct'
+require File.dirname(__FILE__) + '/../lib/adhd/node_manager'
+require File.dirname(__FILE__) + '/../lib/adhd/reactor'
+require File.dirname(__FILE__) + '/../lib/adhd/rest_server'
+require File.dirname(__FILE__) + '/../lib/adhd/replication_connection'
+require File.dirname(__FILE__) + '/../lib/adhd/notifiers/replication'
 
 def parse_config(file)
   @config = YAML.load_openstruct(File.read(file))
@@ -39,7 +40,7 @@ EM.run {
     @node_manager.sync_admin
     @node_manager.run
   end
-  
+
   begin
     # Start the server
     EventMachine::start_server @config.node_url, @config.http_server_port, AdhdRESTServer, @node_manager
@@ -47,6 +48,6 @@ EM.run {
     puts "Could not start rest server..."
   end
 
-  
+
 }
 

@@ -2,7 +2,7 @@
 # for the cluster. TODO: once we have some better tests in place, think about
 # renaming this class and refactoring.
 #
-class NodeDB
+class NodeDb
 
   attr_accessor :local_node_db, :our_node
 

@@ -1,9 +1,9 @@
 require 'rubygems'
 require 'couchrest'
 require 'ruby-debug'
-require File.dirname(__FILE__) + '/models/node_doc'
+require File.dirname(__FILE__) + '/models/node'
 require File.dirname(__FILE__) + '/models/node_db'
-require File.dirname(__FILE__) + '/models/content_doc'
+require File.dirname(__FILE__) + '/models/stored_file'
 require File.dirname(__FILE__) + '/models/shard_range'
 require File.dirname(__FILE__) + '/models/shard_range_db'
 require File.dirname(__FILE__) + '/models/content_shard'
@@ -80,8 +80,8 @@ module Adhd
     def build_node_admin_databases
       @conn_manager = ConnectionBank.new
 
-      # Let's build a nice NodeDB
-      @ndb = NodeDB.new(@our_node)
+      # Let's build a nice NodeDb
+      @ndb = NodeDb.new(@our_node)
       conn_node = UpdateNotifierConnection.new(@config.node_url,
                                         @config.couchdb_server_port,
                                         @our_node.name + "_node_db", # NOTE: Sooo ugly!
@@ -90,7 +90,7 @@ module Adhd
 
 
       # Lets build a nice ShardDB
-      @srdb = ShardRangeDB.new(@ndb)
+      @srdb = ShardRangeDb.new(@ndb)
 
       # Listen to the shard db and in case something changes re-build the DB
       # Chenges to the shards should be in-frequent and tolerable
@@ -155,8 +155,8 @@ module Adhd
         else
           # Keep the same connection, but update the shard information
           @contentdbs[cs] = [current_shards[cs], @contentdbs[cs][1]]
-        end        
-        
+        end
+
       end
 
       # Delete what we do not need
@@ -168,7 +168,7 @@ module Adhd
           @contentdbs.delete cs
         end
       end
-      
+
       # Now we re-sync all
       sync_databases
     end
@@ -186,10 +186,10 @@ module Adhd
           puts "DELETE OLD SHARD #{content_shard.this_shard.shard_db_name}"
           connection.kill Proc.new { content_shard.this_shard.delete! }
         else
-          puts "DID NOT MANAGE TO SYNC #{content_shard.this_shard.shard_db_name} BEFORE KILL"        
+          puts "DID NOT MANAGE TO SYNC #{content_shard.this_shard.shard_db_name} BEFORE KILL"
         end
-        
-        
+
+
     end
 
     # Enters the eventmachine loop
