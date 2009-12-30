@@ -1,24 +1,24 @@
-# Models a CouchDB database which holds ShardRange documents.
+# Models a CouchDB database which holds ShardRanges.
 #
 class ShardRangeDb
 
   attr_accessor :nodes, :local_shard_db, :our_node
 
-  def initialize(nodesv)
-    @nodes = nodesv
+  def initialize(nodes)
+    @nodes = nodes
 
     # Automatically get our shard_db address from our own node name
-    @our_node = nodesv.our_node
-    @local_shard_db = nodesv.our_node.get_shard_db
+    @our_node = @nodes.our_node
+    @local_shard_db = @nodes.our_node.get_shard_db
 
     puts "Assign default database for shard ranges (#{@local_shard_db})"
     ShardRange.use_database @local_shard_db
   end
 
+  # We replicate our state from the management node(s)
+  # We never push content if we are only storage
+  #
   def sync
-
-    # We replicate our state from the management node(s)
-    # We never push content if we are only storage
     management_nodes = Node.by_is_management.reverse
 
     # NOTE: randomize the order for load balancing here
