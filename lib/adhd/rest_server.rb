@@ -164,21 +164,21 @@ module Adhd
       docid = @our_doc[:doc]._id
       dbname = @our_doc[:db].name
       request = "GET /#{dbname}/#{docid}/#{@our_doc[:doc].filename} HTTP/1.0\r\n\r\n"
-      #send_data request
-      #close_connection_after_writing
       puts "Connect to #{server_addr} port #{server_port}"
       puts "#{request}"
       conn = EM::connect server_addr, server_port, CouchStreamerProxy, self, request
       EM::enable_proxy proxy_conn, self, 1024*10
     end
 
+    # Our connection to the CouchDB has just been torn down
+    #
     def proxy_unbind
-      # Our connection to the CouchDB has just been torn down
       close_connection_after_writing
     end
 
+    # Response to a PUT request only
+    #
     def proxy_receive_data data
-      # Response to a PUT request only
       send_data data
     end
 
@@ -197,9 +197,6 @@ module Adhd
       request += "Content-Length: #{@our_doc[:doc].size_bytes}\r\n"
       request += "\r\n"
       request += @buffer
-      #send_data request
-      #close_connection_after_writing
-      # puts "Connect to #{server_addr} port #{server_port}"
       conn = EM::connect server_addr, server_port, CouchStreamerProxy, self, request
       EM::enable_proxy self, proxy_conn, 1024 * 10
     end
