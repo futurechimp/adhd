@@ -20,8 +20,6 @@ class TestReplicationConnection <  Test::Unit::TestCase
       @node2.name = "test2"
       @node2.url = "http://localhost:5984"
       @node2_db = @node2.get_node_db
-      puts "#{@node1_db}"
-      puts "#{@node2_db}"
     end
 
     teardown do
