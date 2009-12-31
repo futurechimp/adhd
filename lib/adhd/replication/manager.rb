@@ -3,8 +3,8 @@ require File.dirname(__FILE__) + '/connection'
 module Adhd
   module Replication
 
-    # We need to centralise the management of replication
-    # connections to make sure that we do not call one when it is not necessary
+    # We need to centralise the management of replication connections to make
+    # sure that we do not call one when it is not necessary
     #
     # The replication manager keeps track of how often we have been replicating
     # a CouchDB and ensure replications do not happen too often. Internally the
