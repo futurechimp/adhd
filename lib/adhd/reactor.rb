@@ -123,7 +123,7 @@ module  Adhd
   end
 
 
-  # Manage a bunch of connections for us
+  # Manages a bunch of connections for us
   #
   class ConnectionBank
 
