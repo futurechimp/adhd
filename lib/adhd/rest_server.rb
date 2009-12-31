@@ -5,37 +5,17 @@ require 'webrick'
 
 module Adhd
 
-  # This implements the connection that proxies an incoming file to a
-  # CouchDB instance, as an attachment.  We stream incoming files so that
-  # we don't need to buffer them in memory (which would be psychotic for large
-  # files) or write them to disk as temp storage (eating up disk space and
-  # causing lag).
+  # An extremely basic HTTP server which can accept requests for storing and
+  # retrieving files.  The server uses the CouchStreamerProxy to stream large
+  # file attachments directly to CouchDb, which avoids writing temp files to
+  # disk or massive memory growth.
   #
-  module CouchStreamerProxy
-
-    def initialize our_client_conn, init_request
-      @our_client_conn = our_client_conn
-      @init_request = init_request
-      our_client_conn.proxy_conn = self
-    end
-
-    # We have opened a connection to the CouchDB server, so now it is time
-    # to send the initial Couch request, using HTTP 1.0.
-    #
-    def post_init
-       send_data @init_request
-    end
-
-    def receive_data data
-      @our_client_conn.proxy_receive_data data
-    end
-
-    def unbind
-      @our_client_conn.proxy_unbind
-    end
-
-  end
-
+  # It would have been nice to use something more standard here, but Rack, for
+  # example, buffers incoming files in memory until they can be dealt with
+  # completely.  The lack of options which could deal with large filestreams
+  # (that we could find, anyway) made us write this thing.  It's something of
+  # an ugly duckling, and could use some love.
+  #
   module RestServer
 
     attr_accessor :proxy_conn
@@ -82,7 +62,7 @@ module Adhd
             @req.parse(socket)
           end
 
-          # The rest of the incomming connection
+          # The rest of the incoming connection
           @buffer = @buffer[($~.end(0))..-1]
 
           # Compute the ID of the sought resource
@@ -204,6 +184,37 @@ module Adhd
     def unbind
       # puts "-- someone disconnected from the echo server!"
     end
+  end
+
+  # This implements the connection that proxies an incoming file to a
+  # CouchDB instance, as an attachment.  We stream incoming files so that
+  # we don't need to buffer them in memory (which would be psychotic for large
+  # files) or write them to disk as temp storage (eating up disk space and
+  # causing lag).
+  #
+  module CouchStreamerProxy
+
+    def initialize our_client_conn, init_request
+      @our_client_conn = our_client_conn
+      @init_request = init_request
+      our_client_conn.proxy_conn = self
+    end
+
+    # We have opened a connection to the CouchDB server, so now it is time
+    # to send the initial Couch request, using HTTP 1.0.
+    #
+    def post_init
+       send_data @init_request
+    end
+
+    def receive_data data
+      @our_client_conn.proxy_receive_data data
+    end
+
+    def unbind
+      @our_client_conn.proxy_unbind
+    end
+
   end
 end
 
