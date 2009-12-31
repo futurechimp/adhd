@@ -29,7 +29,14 @@ class TestReplicationConnection <  Test::Unit::TestCase
 
     should "build a replication connection" do
       endconn = Proc.new do |ev, data|
-        assert ev == :rec
+        # puts "EV: #{ev} DATA: #{data}"
+
+        # assert ev == "rec" or ev == "end"
+
+       if ev == "end"
+          assert @node1_db.get(@node2["_id"])
+          assert @node1_db.get(@node1["_id"])
+       end
 
         # Stop the event machine
         EM::stop_event_loop()
@@ -43,14 +50,14 @@ class TestReplicationConnection <  Test::Unit::TestCase
       EM::run {
         conn.start
       }
-      assert @node1_db.get(@node2["_id"])
-      assert @node1_db.get(@node1["_id"])
 
    end
 
     should "throw an exception if the second does not exist" do
       endconn = Proc.new do |ev, data|
-        assert ev == :rec
+        
+        # puts "EV: #{ev} DATA: #{data}"
+        # assert ev == "rec" or ev == "end"
 
         # Stop the event machine
         EM::stop_event_loop()
@@ -77,7 +84,7 @@ class TestReplicationConnection <  Test::Unit::TestCase
 
     should "throw an exception if the first does not exist" do
       endconn = Proc.new do |ev, data|
-        assert ev == :rec
+        assert ev == "rec" or ev == "end"
 
         # Stop the event machine
         EM::stop_event_loop()
