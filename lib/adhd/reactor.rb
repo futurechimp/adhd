@@ -10,7 +10,6 @@ module  Adhd
   module DbUpdateNotifier
 
     def initialize(db_name, conn_obj)
-      # puts "Db update notifier start..."
       @db_name = db_name
       @conn_obj = conn_obj
       @buffer = ""
@@ -77,18 +76,15 @@ module  Adhd
     end
 
     def start
-      #puts "Registering the connection for: #{@db_name}"
       EM.connect @node_url, @couchdb_server_port, Adhd::DbUpdateNotifier, @db_name, self
       @status = "RUNNING"
     end
 
     def event_handler data
-      #puts "Run a crazy sync on db: #{@db_name}"
       @sync_block.call(data)
     end
 
     def close_handler
-      #puts "Closed abnormally: #{reason}"
       @status = "NOTRUNNING"
     end
 
