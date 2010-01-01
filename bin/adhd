@@ -40,6 +40,7 @@ EM.run {
     @node_manager.sync_admin
     @node_manager.run
   end
+  
 
   begin
     # Start the server

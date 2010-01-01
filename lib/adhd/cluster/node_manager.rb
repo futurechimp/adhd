@@ -78,27 +78,23 @@ module Adhd
     end
 
     def build_node_admin_databases
-      @conn_manager = ConnectionBank.new
 
       # Let's build a nice NodeDb
       @ndb = NodeDb.new(@our_node)
-      conn_node = UpdateNotifierConnection.new(@config.node_url,
+      @conn_node = UpdateNotifierConnection.new(@config.node_url,
                                         @config.couchdb_server_port,
                                         @our_node.name + "_node_db", # NOTE: Sooo ugly!
                                         Proc.new {|data| handle_node_update data})
-      @conn_manager.add_connection(conn_node)
-
 
       # Lets build a nice ShardDB
       @srdb = ShardRangeDb.new(@ndb)
 
       # Listen to the shard db and in case something changes re-build the DB
       # Chenges to the shards should be in-frequent and tolerable
-      conn_shard = UpdateNotifierConnection.new(@config.node_url,
+      @conn_shard = UpdateNotifierConnection.new(@config.node_url,
                                         @config.couchdb_server_port,
                                         @our_node.name + "_shard_db", # NOTE: Sooo ugly!
                                         Proc.new {|data| build_node_content_databases})
-      @conn_manager.add_connection(conn_shard)
 
     end
 
@@ -148,8 +144,7 @@ module Adhd
                                             # get the latest shard information
                                             @contentdbs[cs][0].sync
                                             })
-          @conn_manager.add_connection(conn)
-
+          
           # Store both the shard object and the update notifier
           @contentdbs[cs] = [shard_db, conn]
         else
@@ -192,10 +187,23 @@ module Adhd
 
     end
 
-    # Enters the eventmachine loop
+    # Ensures all our connections to the local CouchDB databases are
+    # healthy, and registered to listen to events.
     #
     def run
-      @conn_manager.run_all
+      # Make sure we listen for changes in the admin databases
+      @conn_node.start
+      @conn_shard.start
+
+      # Make sure all connections are running
+      if @contentdbs
+        @contentdbs.each_value do |v|
+          shard, conn = v[0], v[1]
+          conn.start
+        end
+      end
+
+      
     end
 
     def build_shards(number_of_shards, number_of_replicators)
