@@ -44,7 +44,7 @@ EM.run {
 
   begin
     # Start the server
-    EventMachine::start_server @config.node_url, @config.http_server_port, AdhdRESTServer, @node_manager
+    EventMachine::start_server @config.node_url, @config.http_server_port, Adhd::RestServer, @node_manager
   rescue
     puts "Could not start rest server..."
   end

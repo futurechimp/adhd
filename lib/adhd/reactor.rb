@@ -10,7 +10,6 @@ module  Adhd
   module DbUpdateNotifier
 
     def initialize(conn_obj)
-      # puts "Db update notifier start..."
       @conn_obj = conn_obj
       @buffer = ""
       conn_obj.connection_inside = self # We tell the outer object who we are
