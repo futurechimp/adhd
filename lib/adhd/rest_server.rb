@@ -72,7 +72,8 @@ module Adhd
             @req.header["ID"] = MD5.new($1).to_s
           else
             # TODO: return a 404 here
-            raise "Remember to have a url of the form /adhd/<filenname>."
+            send_error 404, "Not Found", "The URL does not seem to contain /adhd/filename"
+            # raise "Remember to have a url of the form /adhd/<filenname>."
           end
 
           # Change the status once headers are found
@@ -105,8 +106,7 @@ module Adhd
             @status == :get
               handle_get
             else
-              send_data "Problem"
-              close_connection
+              send_error 500, "Internal Server Error", @our_doc[:reason]
             end
           end
 
@@ -128,12 +128,19 @@ module Adhd
               @status = :put
               handle_put
             else
-              send_data "Problem"
-              close_connection
+              send_error 410, "Conflict", @our_doc[:reason]
             end
           end
         end
       end
+
+    def send_error code, message, explanation
+      send_data "HTTP/1.0 #{code} #{message}\r\n"
+      send_data "Content-Length: #{explanation.length}\r\n"
+      send_data "\r\n"
+      send_data explanation
+      close_connection_after_writing
+    end
 
     def handle_get
       # We need to connect to the right server and build a header

@@ -124,12 +124,9 @@ class ShardRangeDb
       rescue RestClient::RequestFailed => rf
 
         if rf.http_code == 409
-          puts "Document already there"
-          puts rf.to_json
-          return {:ok => false , :reason => "Document already in database"}
+          return {:ok => false , :reason => "Document already in database\n"}
         end
       rescue Exception =>e
-        puts "Could not put doc in node #{node} because of #{e}"
         # TODO: change status or chose another management server
         remote_node.status = "UNAVAILABLE"
         remote_node.save
@@ -162,7 +159,7 @@ class ShardRangeDb
         remote_node.save
       end
     end
-  return {:ok => false }
+  return {:ok => false, :reason => "No available node found with the document\n" }
   end
 
 end
