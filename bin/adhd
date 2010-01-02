@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require 'optparse'
-require 'ftools'
+require 'fileutils'
 require 'yaml'
 
 require File.dirname(__FILE__) + '/../lib/ext/hash_to_openstruct'
@@ -40,7 +40,7 @@ EM.run {
     @node_manager.sync_admin
     @node_manager.run
   end
-  
+
 
   begin
     # Start the server

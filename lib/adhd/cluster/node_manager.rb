@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'couchrest'
-require 'ruby-debug'
+require 'digest/md5'
+
 require File.dirname(__FILE__) + '/node'
 require File.dirname(__FILE__) + '/node_db'
 require File.dirname(__FILE__) + '/../storage/stored_file'
@@ -144,7 +145,7 @@ module Adhd
                                             # get the latest shard information
                                             @contentdbs[cs][0].sync
                                             })
-          
+
           # Store both the shard object and the update notifier
           @contentdbs[cs] = [shard_db, conn]
         else
@@ -203,7 +204,7 @@ module Adhd
         end
       end
 
-      
+
     end
 
     def build_shards(number_of_shards, number_of_replicators)
@@ -251,7 +252,7 @@ end
 
 # -------- Management node logic -------------------
 
-require 'md5'
+
 
 # This is an automatic way to allocate shards to nodes that just
 # arrive in the networks, as well as re-allocate shards if nodes
@@ -272,7 +273,7 @@ def assign_nodes_to_shards(node_list, shard_range_list, replication_factor)
 
   shard_range_list.each do |shard_range|
     # Sort all nodes using consistent hashing
-    sorted_nodes = node_list.sort_by {|node| MD5.new("#{node.name}||#{shard_range.shard_db_name}").to_s}
+    sorted_nodes = node_list.sort_by {|node| Digest::MD5.hexdigest("#{node.name}||#{shard_range.shard_db_name}").to_s}
     avail = 0
     master = nil
     shard_node_list = []
