@@ -2,6 +2,7 @@ require 'eventmachine'
 require 'uri'
 require 'net/http'
 require 'webrick'
+require 'digest/md5'
 
 module Adhd
 
@@ -68,7 +69,7 @@ module Adhd
           # Compute the ID of the sought resource
           if @req.path =~ /\/adhd\/(.*)/
             @req.header["Filename"] = $1
-            @req.header["ID"] = MD5.new($1).to_s
+            @req.header["ID"] = Digest::MD5.hexdigest($1).to_s
           else
             # TODO: return a 404 here
             raise "Remember to have a url of the form /adhd/<filenname>."
