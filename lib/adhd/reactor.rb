@@ -23,6 +23,8 @@ module  Adhd
     end
 
     # Shoots update notifications from CouchDB to the @conn.
+    # (The events are raw strings, and it is the resposibility
+    #  of the event receiver to parse the JSON)
     #
     def receive_data data
       @buffer += data # Add the data to the current buffer
@@ -61,7 +63,6 @@ module  Adhd
 
     def start
       if @status != "RUNNING"
-        #puts "Registering the connection for: #{@db_name}"
         EM.connect @node_url, @couchdb_server_port, Adhd::DbUpdateNotifier, self
         @status = "RUNNING"
       end

@@ -24,6 +24,7 @@ module Adhd
     def initialize node_manager
       @node_manager = node_manager
       @buffer = ""
+      @proxybuffer = ""
       @status = :header
     end
 
@@ -47,7 +48,7 @@ module Adhd
       if @status == :header
         @buffer += data
 
-        if data =~ /\r\n\r\n/
+        if @buffer =~ /\r\n\r\n/
 
           # Detected end of headers
           header_data = @buffer[0...($~.begin(0))]
@@ -72,7 +73,8 @@ module Adhd
             @req.header["ID"] = Digest::MD5.hexdigest($1).to_s
           else
             # TODO: return a 404 here
-            raise "Remember to have a url of the form /adhd/<filenname>."
+            send_error 404, "Not Found", "The URL does not seem to contain /adhd/filename"
+            # raise "Remember to have a url of the form /adhd/<filenname>."
           end
 
           # Change the status once headers are found
@@ -86,7 +88,7 @@ module Adhd
       # Now we have the headers, but maybe not the full body, and we are looking
       # for the right node in our network to handle the call.
       if @status == :find_node
-        pause # We want to tell the remote host to wait a bit
+              # We want to tell the remote host to wait a bit
               # This would allow us to defer the execution of the calls to find
               # the right nodes, and extract the doc.
 
@@ -94,7 +96,7 @@ module Adhd
           #       A deferable object, or some other connection, not to block.
           #       Right now we are blocking and it sucks.
 
-          # Now get or write the document associated with this file
+        # Now get or write the document associated with this file
 
         if @req.request_method == "GET"
 
@@ -105,8 +107,7 @@ module Adhd
             @status == :get
               handle_get
             else
-              send_data "Problem"
-              close_connection
+              send_error 500, "Internal Server Error", @our_doc[:reason]
             end
           end
 
@@ -128,15 +129,21 @@ module Adhd
               @status = :put
               handle_put
             else
-              send_data "Problem"
-              close_connection
+              send_error 410, "Conflict", @our_doc[:reason]
             end
           end
         end
       end
 
+    def send_error code, message, explanation
+      send_data "HTTP/1.0 #{code} #{message}\r\n"
+      send_data "Content-Length: #{explanation.length}\r\n"
+      send_data "\r\n"
+      send_data explanation
+      close_connection_after_writing
+    end
+
     def handle_get
-      resume
       # We need to connect to the right server and build a header
       server_uri = URI.parse(@our_doc[:db].server.uri)
       server_addr = server_uri.host
@@ -148,7 +155,6 @@ module Adhd
       puts "Connect to #{server_addr} port #{server_port}"
       puts "#{request}"
       conn = EM::connect server_addr, server_port, CouchStreamerProxy, self, request
-      EM::enable_proxy proxy_conn, self, 1024*10
     end
 
     # Our connection to the CouchDB has just been torn down
@@ -157,15 +163,49 @@ module Adhd
       close_connection_after_writing
     end
 
-    # Response to a PUT request only
+    # Handles data ariving from the upstream server to the client
+    # First it parses the headers, and then it streams the data through
+    # using the event machine proxying mechanism.
     #
     def proxy_receive_data data
-      send_data data
+      @proxystatus = :headers if !@proxystatus
+      
+      if @proxystatus == :headers
+        # First gather the headers
+        @proxybuffer += data
+        if @proxybuffer =~ /\r\n\r\n/
+
+          # Detected end of headers
+          header_data = @proxybuffer[0...($~.begin(0))]
+          @proxybuffer = @proxybuffer[($~.end(0))..-1]
+
+          # Try the webrick parser
+          headers = {}
+          header_lines = header_data.split(/[\r\n]+/)
+          status = header_lines[0]
+          header_lines[1..-1].each do |line|
+            h = line.split(/:\s*/, 2)
+            headers[h[0]] = h[1]
+          end
+          
+          # The rest of the incoming connection                    
+          @proxystatus = :stream
+        end
+      end
+      
+      if @proxystatus == :stream
+        send_data header_lines[0] + "\r\n"
+        send_data "Content-Type: " + headers['Content-Type'] + "\r\n"
+        send_data "Content-Length: " + headers['Content-Length'] + "\r\n"
+        send_data "\r\n"
+        send_data @proxybuffer
+
+        # Any further data is piped through         
+        EM::enable_proxy proxy_conn, self, 1024*10
+      end
     end
 
     def handle_put
-      resume
-
       # We need to connect to the right server and build a header
       server_uri = URI.parse(@our_doc[:db].server.uri)
       server_addr = server_uri.host
